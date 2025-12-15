@@ -182,3 +182,41 @@ h1{margin:0;font-size:18px}
   padding:10px 12px;
   background:#fff;
 }
+/* ===== Copyright chạy chữ ===== */
+.copyright{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none; /* không cản bấm */
+  z-index: 9999;
+}
+
+.copyright .marquee{
+  width: min(720px, 92vw);
+  background: rgba(231,247,238,.95); /* xanh ngà */
+  border: 2px solid rgba(15,118,110,.45);
+  border-radius: 999px; /* oval */
+  box-shadow: 0 10px 22px rgba(0,0,0,.12);
+  overflow: hidden;
+  padding: 10px 14px;
+}
+
+.copyright .marquee span{
+  display: inline-block;
+  white-space: nowrap;
+  font-weight: 900;
+  color: #0f766e;
+  animation: marquee_run 14s linear infinite;
+}
+
+@keyframes marquee_run{
+  0%{ transform: translateX(100%); }
+  100%{ transform: translateX(-100%); }
+}
+
+/* chừa chỗ để footer không che nội dung cuối */
+body{ padding-bottom: 80px; }
+
