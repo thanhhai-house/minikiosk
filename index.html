@@ -2,230 +2,111 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Kiosk Phụ Tùng Xe</title>
-  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    body{
+      font-family:system-ui,-apple-system;
+      margin:0;
+      background:#e7f7ee;
+    }
+    header{
+      background:#0f766e;
+      color:#fff;
+      padding:12px 16px;
+      font-size:20px;
+      font-weight:900;
+    }
+    main{ padding:16px; max-width:1100px; margin:auto; }
+
+    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
+    input,textarea,button{
+      padding:10px;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      font-size:14px;
+    }
+    button{
+      background:#0f766e;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+    }
+    button.ghost{ background:#fff; color:#0f766e; }
+    textarea{ resize:vertical; }
+
+    .preview{
+      height:160px;
+      border:1px dashed #94a3b8;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+    }
+    .preview img{ max-height:100%; max-width:100%; }
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:14px;
+      margin-top:20px;
+    }
+    .card{
+      background:#fff;
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 6px 16px rgba(0,0,0,.08);
+    }
+    .card img{
+      width:100%;
+      height:160px;
+      object-fit:contain;
+      background:#f1f5f9;
+    }
+    .card .body{ padding:12px; }
+    .tag{
+      display:inline-block;
+      background:#e2e8f0;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:12px;
+      margin-right:4px;
+    }
+  </style>
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="wrap top">
-      <div class="brand">
-        <div class="logo">🚛</div>
-        <div>
-          <h1>Kiosk Phụ Tùng Xe</h1>
-          <p>ID • OEM • OEM thay thế • Thương hiệu • Loại • Ghi chú • Tồn • Ảnh • Nhập/Bán • Báo giá (có SL) • Sync Google Sheet</p>
-        </div>
-      </div>
+<header>🚛 KIOSK PHỤ TÙNG XE (FIX)</header>
 
-      <div class="actions">
-        <button class="btn" id="btnSyncMoves">Đẩy nhập/xuất lên Google Sheet</button>
-        <button class="btn ghost" id="btnExportMoves">Xuất CSV nhập/xuất</button>
-        <button class="btn ghost" id="btnExportInv">Xuất CSV tồn kho</button>
+<main>
+  <h3>➕ Thêm phụ tùng</h3>
 
-        <button class="btn ghost" id="btnExportJson">Xuất JSON</button>
-        <label class="btn ghost">
-          Nhập JSON
-          <input id="fileImport" type="file" accept="application/json" hidden />
-        </label>
+  <form id="form" class="grid">
+    <input id="oem" placeholder="Mã OEM" required />
+    <input id="name" placeholder="Tên sản phẩm" required />
+    <input id="brand" placeholder="Thương hiệu" required />
+    <input id="type" placeholder="Loại (lọc / phanh...)" required />
+    <input id="price" type="number" placeholder="Giá tiền" required />
+    <input id="qty" type="number" placeholder="Số lượng" required />
 
-        <button class="btn danger" id="btnReset">Xoá toàn bộ</button>
-      </div>
+    <input id="image" type="file" accept="image/*" />
+    <div class="preview">
+      <img id="preview" />
+      <span id="previewText">Chưa có hình</span>
     </div>
-  </header>
 
-  <main class="wrap">
-    <!-- FORM -->
-    <section class="panel">
-      <div class="panel-head">
-        <h2>➕ Thêm / Cập nhật phụ tùng</h2>
-        <p class="muted">Chụp ảnh hoặc chọn ảnh từ điện thoại. Dữ liệu lưu trong trình duyệt máy bạn.</p>
-      </div>
+    <textarea id="note" placeholder="Ghi chú sản phẩm" style="grid-column:1/-1"></textarea>
 
-      <form id="formPart" class="grid">
-        <input type="hidden" id="id" />
+    <button type="submit">Lưu sản phẩm</button>
+    <button type="button" class="ghost" id="btnClear">Nhập mới</button>
+  </form>
 
-        <div class="field">
-          <label>ID</label>
-          <input id="idView" placeholder="Tự tạo" disabled />
-        </div>
+  <h3 style="margin-top:30px">📦 Danh sách sản phẩm</h3>
+  <div id="list" class="cards"></div>
+</main>
 
-        <div class="field">
-          <label>Mã OEM (chính)</label>
-          <input id="oem" placeholder="VD: 12345-K56-VN" required />
-        </div>
-
-        <div class="field" style="grid-column:1/-1;">
-          <label>Mã OEM tương đương / thay thế (cách nhau bằng dấu phẩy)</label>
-          <input id="oemAlt" placeholder="VD: 12345-K56-TH, 12345-K56-JP, 12345-K56-IND" />
-          <div class="hint">Nhập nhiều mã, phân tách bằng dấu phẩy. Dùng để gợi ý thay thế khi hết hàng.</div>
-        </div>
-
-        <div class="field">
-          <label>Tên</label>
-          <input id="name" placeholder="VD: Lọc nhớt / Lọc gió..." required />
-        </div>
-
-        <div class="field">
-          <label>Thương hiệu (hãng xe / hãng lọc)</label>
-          <input id="brand" placeholder="VD: Sunfil / Sakura / Donaldson..." required />
-        </div>
-
-        <div class="field">
-          <label>Loại (Danh mục)</label>
-          <input id="type" placeholder="VD: Lọc / Phanh / Nhớt..." required />
-        </div>
-
-        <div class="field">
-          <label>Giá tiền (VNĐ)</label>
-          <input id="price" type="number" min="0" step="1000" required />
-        </div>
-
-        <div class="field">
-          <label>Số lượng tồn</label>
-          <input id="qty" type="number" min="0" step="1" required />
-        </div>
-
-        <div class="field">
-          <label>Hình ảnh</label>
-          <input id="image" type="file" accept="image/*" />
-          <div class="hint">Bấm chọn hình → chọn Camera để chụp</div>
-        </div>
-
-        <div class="field preview">
-          <label>Xem trước</label>
-          <div class="imgbox">
-            <img id="previewImg" alt="preview" />
-            <div id="previewEmpty" class="muted">Chưa có hình</div>
-          </div>
-        </div>
-
-        <div class="field" style="grid-column:1/-1;">
-          <label>Ghi thông tin sản phẩm</label>
-          <textarea id="note" rows="3" placeholder="VD: dùng cho xe..., kích thước..., ren..., micron..." required></textarea>
-        </div>
-
-        <div class="row">
-          <button class="btn" type="submit" id="btnSave">Lưu phụ tùng</button>
-          <button class="btn ghost" type="button" id="btnClear">Nhập mới</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- LIST -->
-    <section class="panel">
-      <div class="panel-head row2">
-        <div>
-          <h2>📦 Danh sách phụ tùng</h2>
-          <p class="muted">Tick chọn để nhập số lượng báo giá • “Thay thế” sẽ hiện popup có ảnh nếu có</p>
-        </div>
-        <div class="row">
-          <input id="q" class="search" placeholder="Tìm OEM / OEM thay thế / tên / thương hiệu / loại / ghi chú..." />
-          <button class="btn ghost" id="btnClearSearch" type="button">✖ Xoá tìm</button>
-          <button class="btn ghost" id="btnClearSelect">Bỏ chọn</button>
-          <button class="btn" id="btnPrintQuote">In báo giá (đã chọn)</button>
-        </div>
-      </div>
-
-      <div id="typeButtons" class="typebar"></div>
-      <div id="brandButtons" class="typebar" style="margin-top:10px"></div>
-
-      <div id="stats" class="stats"></div>
-      <div id="list" class="cards"></div>
-    </section>
-  </main>
-
-  <!-- Detail -->
-  <dialog id="dlgDetail" class="dlg">
-    <form method="dialog" class="dlg-body">
-      <div class="dlg-top">
-        <h3 id="dTitle">Chi tiết</h3>
-        <button class="btn ghost" value="cancel">Đóng</button>
-      </div>
-
-      <div class="detail">
-        <div class="detail-img">
-          <img id="dImg" alt="img" />
-          <div id="dImgEmpty" class="muted">Không có hình</div>
-        </div>
-
-        <div class="detail-info">
-          <div class="kv2">
-            <div class="k">ID</div><div class="v" id="dId"></div>
-            <div class="k">OEM</div><div class="v" id="dOem"></div>
-            <div class="k">OEM thay thế</div><div class="v" id="dOemAlt" style="font-weight:700"></div>
-            <div class="k">Tên</div><div class="v" id="dName"></div>
-            <div class="k">Thương hiệu</div><div class="v" id="dBrand"></div>
-            <div class="k">Loại</div><div class="v" id="dType"></div>
-            <div class="k">Giá</div><div class="v price" id="dPrice"></div>
-            <div class="k">Tồn</div><div class="v" id="dQty"></div>
-            <div class="k">Ghi chú</div><div class="v" id="dNote" style="font-weight:700"></div>
-          </div>
-
-          <div class="row" style="margin-top:10px">
-            <button class="btn ghost" type="button" id="btnPrintSingle">In báo giá (1 sp)</button>
-            <button class="btn ghost" type="button" id="btnAltFromDetail">Gợi ý thay thế</button>
-            <button class="btn" type="button" id="btnMoveFromDetail">Nhập / Bán</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="history">
-        <h4>Lịch sử nhập/xuất</h4>
-        <div id="dMoves" class="moves"></div>
-      </div>
-    </form>
-  </dialog>
-
-  <!-- Alternatives dialog -->
-  <dialog id="dlgAlt" class="dlg">
-    <form method="dialog" class="dlg-body">
-      <div class="dlg-top">
-        <h3 id="altTitle">Gợi ý thay thế</h3>
-        <button class="btn ghost" value="cancel">Đóng</button>
-      </div>
-
-      <p class="muted" id="altSub"></p>
-      <div id="altList" class="cards"></div>
-
-      <menu class="dlg-actions">
-        <button class="btn ghost" value="cancel">Đóng</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <!-- Move -->
-  <dialog id="dlgMove" class="dlg">
-    <form method="dialog" class="dlg-body">
-      <h3 id="dlgTitle">Nhập/Bán</h3>
-      <p class="muted" id="dlgSub"></p>
-
-      <div class="grid2">
-        <div class="field">
-          <label>Loại thao tác</label>
-          <select id="moveKind" class="select">
-            <option value="in">Nhập (+)</option>
-            <option value="out">Bán (-)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Số lượng</label>
-          <input id="moveQty" type="number" min="1" step="1" value="1" />
-        </div>
-      </div>
-
-      <div class="field">
-        <label>Ghi chú (tuỳ chọn)</label>
-        <input id="moveNote" placeholder="VD: bán cho khách A / nhập lô mới..." />
-      </div>
-
-      <menu class="dlg-actions">
-        <button class="btn ghost" value="cancel">Huỷ</button>
-        <button class="btn" id="btnDoMove" value="ok">Xác nhận</button>
-      </menu>
-    </form>
-  </dialog>
-
-  <section id="printArea" class="print-area" aria-hidden="true"></section>
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
