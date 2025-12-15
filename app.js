@@ -1,20 +1,25 @@
 // ====== GOOGLE SHEET SYNC CONFIG ======
 const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwQs6-8Gf7Q5QXRB_99CjyzP469OkIVdrVANEACRnGwdBwqi1M2WjNjITgveVo-DmmWcg/exec";
-const SHEET_TOKEN = "haivo2002-thaovy";
+const SHEET_TOKEN = "const TOKEN = "haivo2002-thaovy"; // đổi thành chuỗi bí mật, ví dụ: "kiosk-2025-xyz"
+";
 
 // ===== Storage =====
-const KEY = "kiosk_parts_v6";
+const KEY = "kiosk_parts_v7";
 const load = () => JSON.parse(localStorage.getItem(KEY) || "[]");
 const save = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
+
+// Quote qty storage
+const QKEY = "kiosk_quote_qty_v1";
+function loadQuoteQty_(){ try{ return JSON.parse(localStorage.getItem(QKEY) || "{}"); }catch{ return {}; } }
+function saveQuoteQty_(){ localStorage.setItem(QKEY, JSON.stringify(quoteQtyById)); }
 
 // ===== State =====
 let items = load();
 let editingImageDataUrl = null;
 let activeType = "";
 let activeBrand = "";
-let selectedIds = new Set();          // chọn để báo giá
-let quoteQtyById = loadQuoteQty_();   // số lượng báo giá theo id
-
+let selectedIds = new Set();
+let quoteQtyById = loadQuoteQty_();
 let moveTargetId = null;
 let detailTargetId = null;
 
@@ -29,6 +34,7 @@ const elForm = document.getElementById("formPart");
 const elId = document.getElementById("id");
 const elIdView = document.getElementById("idView");
 const elOem = document.getElementById("oem");
+const elOemAlt = document.getElementById("oemAlt");
 const elName = document.getElementById("name");
 const elBrand = document.getElementById("brand");
 const elType = document.getElementById("type");
@@ -60,6 +66,7 @@ const dImg = document.getElementById("dImg");
 const dImgEmpty = document.getElementById("dImgEmpty");
 const dId = document.getElementById("dId");
 const dOem = document.getElementById("dOem");
+const dOemAlt = document.getElementById("dOemAlt");
 const dName = document.getElementById("dName");
 const dBrand = document.getElementById("dBrand");
 const dType = document.getElementById("dType");
@@ -69,6 +76,7 @@ const dNote = document.getElementById("dNote");
 const dMoves = document.getElementById("dMoves");
 const btnPrintSingle = document.getElementById("btnPrintSingle");
 const btnMoveFromDetail = document.getElementById("btnMoveFromDetail");
+const btnAltFromDetail = document.getElementById("btnAltFromDetail");
 
 // Move
 const dlgMove = document.getElementById("dlgMove");
@@ -81,6 +89,7 @@ const btnDoMove = document.getElementById("btnDoMove");
 
 // ===== Helpers =====
 function money(v){ return Number(v||0).toLocaleString("vi-VN")+"₫"; }
+
 function fmtDate(ts){
   const d = new Date(ts);
   const dd = String(d.getDate()).padStart(2,"0");
@@ -90,15 +99,33 @@ function fmtDate(ts){
   const mi = String(d.getMinutes()).padStart(2,"0");
   return `${dd}/${mm}/${yy} ${hh}:${mi}`;
 }
+
 function makeId(){
   const d=new Date();
   const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,"0"), day=String(d.getDate()).padStart(2,"0");
   const rnd=Math.random().toString(36).slice(2,6).toUpperCase();
   return `PT-${y}${m}${day}-${rnd}`;
 }
+
 function norm(s){ return (s||"").toString().trim().toLowerCase(); }
 function uniqueTypes(arr){ return [...new Set(arr.map(x=>x.type).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
 function uniqueBrands(arr){ return [...new Set(arr.map(x=>x.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b)); }
+
+// OEM alternate helpers
+function normalizeOem(s){ return (s||"").toString().trim().toUpperCase(); }
+function parseAltOems(raw){
+  return (raw || "")
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(normalizeOem);
+}
+function buildOemSet(item){
+  const set = new Set();
+  set.add(normalizeOem(item.oem));
+  for(const x of (item.oemAlt || [])) set.add(normalizeOem(x));
+  return set;
+}
 
 function setPreview(dataUrl){
   if(dataUrl){
@@ -128,14 +155,7 @@ function downloadText(filename, text, mime="text/plain"){
   URL.revokeObjectURL(url);
 }
 
-// ===== Quote Qty storage =====
-const QKEY = "kiosk_quote_qty_v1";
-function loadQuoteQty_(){
-  try{ return JSON.parse(localStorage.getItem(QKEY) || "{}"); }catch{ return {}; }
-}
-function saveQuoteQty_(){
-  localStorage.setItem(QKEY, JSON.stringify(quoteQtyById));
-}
+// Quote qty
 function getQuoteQty(id){
   const n = Number(quoteQtyById[id] ?? 1);
   return Number.isFinite(n) && n > 0 ? Math.floor(n) : 1;
@@ -149,7 +169,8 @@ function setQuoteQty(id, qty){
 // ===== Form reset =====
 function clearForm(){
   elId.value=""; elIdView.value="Tự tạo";
-  elOem.value=""; elName.value=""; elBrand.value=""; elType.value="";
+  elOem.value=""; elOemAlt.value="";
+  elName.value=""; elBrand.value=""; elType.value="";
   elPrice.value=""; elQty.value=""; elNote.value="";
   elImage.value=""; editingImageDataUrl=null;
   setPreview(null);
@@ -189,12 +210,13 @@ function render(){
   renderBrandButtons();
 
   const q=norm(elQ.value);
+
   const filtered=items
     .filter(it=>!activeType || it.type===activeType)
     .filter(it=>!activeBrand || it.brand===activeBrand)
     .filter(it=>{
       if(!q) return true;
-      const hay=`${it.id} ${it.oem} ${it.name} ${it.brand} ${it.type} ${it.note}`.toLowerCase();
+      const hay = `${it.id} ${it.oem} ${(it.oemAlt||[]).join(" ")} ${it.name} ${it.brand} ${it.type} ${it.note}`.toLowerCase();
       return hay.includes(q);
     })
     .sort((a,b)=> (a.name||"").localeCompare(b.name||""));
@@ -212,6 +234,9 @@ function render(){
   elList.innerHTML = filtered.map(it=>{
     const checked=selectedIds.has(it.id)?"checked":"";
     const qqty = getQuoteQty(it.id);
+    const altCount = (it.oemAlt||[]).length;
+    const outOfStock = Number(it.qty||0) <= 0;
+
     return `
       <div class="card">
         <div class="img">
@@ -223,7 +248,8 @@ function render(){
         </div>
         <div class="body">
           <div class="small">ID: <b>${it.id}</b></div>
-          <div class="small">OEM: <b>${it.oem || "-"}</b></div>
+          <div class="small">OEM: <b>${it.oem || "-"}</b> ${altCount ? `• <b>${altCount}</b> mã thay` : ""}</div>
+
           <h3 style="margin:6px 0 2px">${it.name || "-"}</h3>
 
           <div class="kv">
@@ -250,6 +276,7 @@ function render(){
           <div class="btns">
             <button class="btn ghost" onclick="openDetail('${it.id}')">Chi tiết</button>
             <button class="btn ghost" onclick="editItem('${it.id}')">Chỉnh sửa</button>
+            <button class="btn ghost" onclick="showAlternatives('${it.id}')">${outOfStock ? "🔥 Thay thế" : "Thay thế"}</button>
             <button class="btn" onclick="openMove('${it.id}')">Nhập / Bán</button>
             <button class="btn danger" onclick="delItem('${it.id}')">Xoá</button>
           </div>
@@ -263,10 +290,7 @@ window.toggleSelect=(id,isOn)=>{
   if(isOn) selectedIds.add(id);
   else selectedIds.delete(id);
 };
-window.setQuoteQtyLive=(id,val)=>{
-  setQuoteQty(id, val);
-  // không render full để khỏi lag; nhưng vẫn cập nhật thành tiền khi bạn in báo giá
-};
+window.setQuoteQtyLive=(id,val)=>{ setQuoteQty(id, val); };
 
 // ===== Image upload =====
 elImage.addEventListener("change", ()=>{
@@ -282,7 +306,9 @@ elForm.addEventListener("submit",(e)=>{
   e.preventDefault();
 
   const id=elId.value || makeId();
-  const oem=elOem.value.trim();
+  const oem = normalizeOem(elOem.value);
+  const oemAlt = parseAltOems(elOemAlt.value);
+
   const name=elName.value.trim();
   const brand=elBrand.value.trim();
   const type=elType.value.trim();
@@ -290,14 +316,19 @@ elForm.addEventListener("submit",(e)=>{
   const price=Number(elPrice.value||0);
   const qty=Number(elQty.value||0);
 
-  if(!oem||!name||!brand||!type||!note){ alert("Nhập đủ: OEM, Tên, Thương hiệu, Loại, Ghi chú."); return; }
+  if(!oem || !name||!brand||!type||!note){
+    alert("Nhập đủ: OEM, Tên, Thương hiệu, Loại, Ghi chú.");
+    return;
+  }
   if(price<0||qty<0){ alert("Giá và số lượng phải >=0"); return; }
 
   const idx=items.findIndex(x=>x.id===id);
   const old=idx>=0?items[idx]:null;
 
   const payload={
-    id,oem,name,brand,type,note,price,qty,
+    id, oem, oemAlt,
+    name, brand, type, note,
+    price, qty,
     image: editingImageDataUrl || old?.image || null,
     createdAt: old?.createdAt || Date.now(),
     updatedAt: Date.now(),
@@ -307,7 +338,8 @@ elForm.addEventListener("submit",(e)=>{
   if(idx>=0) items[idx]=payload; else items.push(payload);
 
   save(items);
-  if(!quoteQtyById[id]){ setQuoteQty(id, 1); }
+  if(!quoteQtyById[id]) setQuoteQty(id, 1);
+
   clearForm();
   render();
 });
@@ -321,10 +353,22 @@ elQ.addEventListener("input", render);
 // ===== CRUD =====
 window.editItem=(id)=>{
   const it=items.find(x=>x.id===id); if(!it) return;
+
   elId.value=it.id; elIdView.value=it.id;
-  elOem.value=it.oem||""; elName.value=it.name||""; elBrand.value=it.brand||"";
-  elType.value=it.type||""; elPrice.value=it.price??0; elQty.value=it.qty??0; elNote.value=it.note||"";
-  editingImageDataUrl=it.image||null; elImage.value=""; setPreview(editingImageDataUrl);
+  elOem.value=it.oem||"";
+  elOemAlt.value=(it.oemAlt||[]).join(", ");
+
+  elName.value=it.name||"";
+  elBrand.value=it.brand||"";
+  elType.value=it.type||"";
+  elPrice.value=it.price??0;
+  elQty.value=it.qty??0;
+  elNote.value=it.note||"";
+
+  editingImageDataUrl=it.image||null;
+  elImage.value="";
+  setPreview(editingImageDataUrl);
+
   document.getElementById("btnSave").textContent="Cập nhật";
   window.scrollTo({top:0,behavior:"smooth"});
 };
@@ -333,10 +377,11 @@ window.delItem=(id)=>{
   const it=items.find(x=>x.id===id); if(!it) return;
   const ok=confirm(`Xoá phụ tùng:\n${it.name}\nID: ${it.id}\nOEM: ${it.oem} ?`);
   if(!ok) return;
+
   items=items.filter(x=>x.id!==id);
   selectedIds.delete(id);
-  delete quoteQtyById[id];
-  saveQuoteQty_();
+  delete quoteQtyById[id]; saveQuoteQty_();
+
   save(items);
   render();
 };
@@ -349,12 +394,15 @@ window.openDetail=(id)=>{
   dTitle.textContent=`Chi tiết: ${it.name}`;
   dId.textContent=it.id;
   dOem.textContent=it.oem||"-";
+  dOemAlt.textContent=(it.oemAlt && it.oemAlt.length) ? it.oemAlt.join(", ") : "-";
+
   dName.textContent=it.name||"-";
   dBrand.textContent=it.brand||"-";
   dType.textContent=it.type||"-";
   dPrice.textContent=money(it.price||0);
   dQty.textContent=String(it.qty??0);
   dNote.textContent=it.note||"-";
+
   setDetailImage(it.image);
 
   const moves=(it.moves||[]).slice(0,120);
@@ -373,9 +421,13 @@ btnMoveFromDetail.addEventListener("click", ()=>{
   openMove(detailTargetId);
 });
 
+btnAltFromDetail.addEventListener("click", ()=>{
+  if(!detailTargetId) return;
+  showAlternatives(detailTargetId);
+});
+
 btnPrintSingle.addEventListener("click", ()=>{
   if(!detailTargetId) return;
-  // in 1 sp theo qty báo giá đã lưu
   printQuote([detailTargetId]);
 });
 
@@ -383,6 +435,7 @@ btnPrintSingle.addEventListener("click", ()=>{
 window.openMove=(id)=>{
   const it=items.find(x=>x.id===id); if(!it) return;
   moveTargetId=id;
+
   dlgTitle.textContent=`Nhập/Bán: ${it.name}`;
   dlgSub.textContent=`ID: ${it.id} • OEM: ${it.oem} • Tồn hiện tại: ${it.qty}`;
   moveKind.value="in"; moveQty.value=1; moveNote.value="";
@@ -391,13 +444,16 @@ window.openMove=(id)=>{
 
 btnDoMove.addEventListener("click",(e)=>{
   const it=items.find(x=>x.id===moveTargetId); if(!it) return;
+
   const kind=moveKind.value;
   const q=Number(moveQty.value||0);
   const note=moveNote.value.trim();
+
   if(q<=0){ alert("Số lượng phải >=1"); e.preventDefault(); return; }
 
   const current=Number(it.qty||0);
   const next=kind==="in"?current+q:current-q;
+
   if(kind==="out" && next<0){ alert("Không đủ tồn kho!"); e.preventDefault(); return; }
 
   it.qty=next;
@@ -407,6 +463,7 @@ btnDoMove.addEventListener("click",(e)=>{
 
   save(items);
   render();
+
   if(detailTargetId===it.id && dlgDetail.open) openDetail(it.id);
 });
 
@@ -418,10 +475,13 @@ btnPrintQuote.addEventListener("click", ()=>{
 });
 
 function printQuote(ids){
-  const products=ids.map(id=>items.find(x=>x.id===id)).filter(Boolean).map(p=>{
-    const qty = getQuoteQty(p.id);
-    return { ...p, quoteQty: qty, lineTotal: Number(p.price||0)*qty };
-  });
+  const products=ids
+    .map(id=>items.find(x=>x.id===id))
+    .filter(Boolean)
+    .map(p=>{
+      const qty = getQuoteQty(p.id);
+      return { ...p, quoteQty: qty, lineTotal: Number(p.price||0)*qty };
+    });
 
   const today=fmtDate(Date.now());
   const total=products.reduce((s,p)=>s+p.lineTotal,0);
@@ -457,7 +517,10 @@ function printQuote(ids){
           ${products.map(p=>`
             <tr>
               <td style="border-bottom:1px solid #f1f5f9;padding:8px">${p.id}</td>
-              <td style="border-bottom:1px solid #f1f5f9;padding:8px">${p.oem||""}</td>
+              <td style="border-bottom:1px solid #f1f5f9;padding:8px">
+                <div style="font-weight:700">${p.oem||""}</div>
+                <div style="color:#64748b;font-size:11px">${(p.oemAlt||[]).slice(0,3).join(", ")}${(p.oemAlt||[]).length>3?"…":""}</div>
+              </td>
               <td style="border-bottom:1px solid #f1f5f9;padding:8px">
                 <div style="font-weight:700">${p.name||""}</div>
                 <div style="color:#475569;font-size:11px">${p.note||""}</div>
@@ -480,22 +543,82 @@ function printQuote(ids){
   window.print();
 }
 
+// ===== Alternatives (OEM tương đương) =====
+window.showAlternatives = function(id){
+  const base = items.find(x => x.id === id);
+  if(!base) return;
+
+  const baseSet = buildOemSet(base);
+
+  // tìm sản phẩm khác có giao nhau OEM (oem hoặc oemAlt)
+  const alts = items
+    .filter(x => x.id !== base.id)
+    .map(x => ({ item: x, set: buildOemSet(x) }))
+    .filter(x => {
+      for(const k of x.set) if(baseSet.has(k)) return true;
+      return false;
+    })
+    .map(x => x.item)
+    .sort((a,b) => Number(b.qty||0) - Number(a.qty||0)); // ưu tiên còn hàng
+
+  if(alts.length === 0){
+    alert("Không thấy sản phẩm thay thế theo OEM tương đương.\nHãy nhập thêm OEM thay thế cho sản phẩm.");
+    return;
+  }
+
+  const msg = [
+    `Sản phẩm gốc: ${base.name}`,
+    `OEM: ${base.oem}`,
+    `OEM thay thế: ${(base.oemAlt||[]).join(", ") || "-"}`,
+    "",
+    "Gợi ý thay thế (ưu tiên còn hàng):",
+    ...alts.slice(0, 12).map((x, i) =>
+      `${i+1}) ${x.name} | OEM: ${x.oem} | Tồn: ${x.qty} | Giá: ${money(x.price||0)}`
+    ),
+    "",
+    "Mẹo: chọn món thay thế → bấm Chi tiết để xem hình."
+  ].join("\n");
+
+  alert(msg);
+};
+
 // ===== Export CSV/JSON =====
 btnExportInv.addEventListener("click", ()=>{
-  const header=["id","oem","ten","thuong_hieu","loai","ghi_chu","gia","so_luong_ton","created_at","updated_at"];
+  const header=["id","oem","oem_thay_the","ten","thuong_hieu","loai","ghi_chu","gia","so_luong_ton","created_at","updated_at"];
   const rows=[header].concat(items.map(it=>[
-    it.id,it.oem,it.name,it.brand,it.type,it.note,it.price,it.qty,fmtDate(it.createdAt),fmtDate(it.updatedAt)
+    it.id,
+    it.oem,
+    (it.oemAlt||[]).join(" | "),
+    it.name,
+    it.brand,
+    it.type,
+    it.note,
+    it.price,
+    it.qty,
+    fmtDate(it.createdAt),
+    fmtDate(it.updatedAt)
   ]));
   downloadText(`ton_kho_${new Date().toISOString().slice(0,10)}.csv`, toCsv(rows), "text/csv");
 });
 
 btnExportMoves.addEventListener("click", ()=>{
-  const header=["id","oem","ten","thuong_hieu","loai","ngay_gio","loai_thao_tac","so_luong","ghi_chu"];
+  const header=["id","oem","oem_thay_the","ten","thuong_hieu","loai","ngay_gio","loai_thao_tac","so_luong","ghi_chu"];
   const rows=[header];
   for(const it of items){
     const asc=[...(it.moves||[])].sort((a,b)=>a.at-b.at);
     for(const m of asc){
-      rows.push([it.id,it.oem,it.name,it.brand,it.type,fmtDate(m.at),m.kind==="in"?"NHAP":"XUAT_BAN",m.qty,m.note||""]);
+      rows.push([
+        it.id,
+        it.oem,
+        (it.oemAlt||[]).join(" | "),
+        it.name,
+        it.brand,
+        it.type,
+        fmtDate(m.at),
+        m.kind==="in"?"NHAP":"XUAT_BAN",
+        m.qty,
+        m.note||""
+      ]);
     }
   }
   downloadText(`lich_su_nhap_xuat_${new Date().toISOString().slice(0,10)}.csv`, toCsv(rows), "text/csv");
@@ -528,9 +651,10 @@ btnReset.addEventListener("click", ()=>{
   const ok=confirm("Xoá toàn bộ dữ liệu trên máy này? (Không thể phục hồi)");
   if(!ok) return;
   items=[]; selectedIds=new Set();
-  save(items);
   quoteQtyById={}; saveQuoteQty_();
-  clearForm(); render();
+  save(items);
+  clearForm();
+  render();
 });
 
 // ====== SYNC MOVES TO GOOGLE SHEET ======
@@ -549,7 +673,11 @@ btnSyncMoves.addEventListener("click", async ()=>{
     const asc=[...(it.moves||[])].sort((a,b)=>a.at-b.at);
     for(const m of asc){
       rows.push([
-        it.id, it.oem, it.name, it.brand, it.type,
+        it.id,
+        it.oem,
+        it.name,
+        it.brand,
+        it.type,
         fmtDate(m.at),
         m.kind==="in" ? "NHAP" : "XUAT_BAN",
         String(m.qty),
