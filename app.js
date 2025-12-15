@@ -1,10 +1,9 @@
 // ====== GOOGLE SHEET SYNC CONFIG ======
 const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwQs6-8Gf7Q5QXRB_99CjyzP469OkIVdrVANEACRnGwdBwqi1M2WjNjITgveVo-DmmWcg/exec";
-const SHEET_TOKEN = "const TOKEN = "haivo2002-thaovy"; // đổi thành chuỗi bí mật, ví dụ: "kiosk-2025-xyz"
-";
+const SHEET_TOKEN = "haivo2002-thaovy";
 
 // ===== Storage =====
-const KEY = "kiosk_parts_v7";
+const KEY = "kiosk_parts_v8";
 const load = () => JSON.parse(localStorage.getItem(KEY) || "[]");
 const save = (arr) => localStorage.setItem(KEY, JSON.stringify(arr));
 
@@ -77,6 +76,12 @@ const dMoves = document.getElementById("dMoves");
 const btnPrintSingle = document.getElementById("btnPrintSingle");
 const btnMoveFromDetail = document.getElementById("btnMoveFromDetail");
 const btnAltFromDetail = document.getElementById("btnAltFromDetail");
+
+// Alternatives dialog
+const dlgAlt = document.getElementById("dlgAlt");
+const altTitle = document.getElementById("altTitle");
+const altSub = document.getElementById("altSub");
+const altList = document.getElementById("altList");
 
 // Move
 const dlgMove = document.getElementById("dlgMove");
@@ -276,7 +281,7 @@ function render(){
           <div class="btns">
             <button class="btn ghost" onclick="openDetail('${it.id}')">Chi tiết</button>
             <button class="btn ghost" onclick="editItem('${it.id}')">Chỉnh sửa</button>
-            <button class="btn ghost" onclick="showAlternatives('${it.id}')">${outOfStock ? "🔥 Thay thế" : "Thay thế"}</button>
+            <button class="btn ghost" onclick="openAlternatives('${it.id}')">${outOfStock ? "🔥 Thay thế" : "Thay thế"}</button>
             <button class="btn" onclick="openMove('${it.id}')">Nhập / Bán</button>
             <button class="btn danger" onclick="delItem('${it.id}')">Xoá</button>
           </div>
@@ -423,7 +428,7 @@ btnMoveFromDetail.addEventListener("click", ()=>{
 
 btnAltFromDetail.addEventListener("click", ()=>{
   if(!detailTargetId) return;
-  showAlternatives(detailTargetId);
+  openAlternatives(detailTargetId);
 });
 
 btnPrintSingle.addEventListener("click", ()=>{
@@ -543,14 +548,13 @@ function printQuote(ids){
   window.print();
 }
 
-// ===== Alternatives (OEM tương đương) =====
-window.showAlternatives = function(id){
+// ===== Alternatives dialog (hiện ảnh nếu có) =====
+window.openAlternatives = function(id){
   const base = items.find(x => x.id === id);
   if(!base) return;
 
   const baseSet = buildOemSet(base);
 
-  // tìm sản phẩm khác có giao nhau OEM (oem hoặc oemAlt)
   const alts = items
     .filter(x => x.id !== base.id)
     .map(x => ({ item: x, set: buildOemSet(x) }))
@@ -561,25 +565,62 @@ window.showAlternatives = function(id){
     .map(x => x.item)
     .sort((a,b) => Number(b.qty||0) - Number(a.qty||0)); // ưu tiên còn hàng
 
+  altTitle.textContent = `Gợi ý thay thế: ${base.name}`;
+  altSub.textContent = `OEM: ${base.oem} • OEM thay thế: ${(base.oemAlt||[]).join(", ") || "-"} • Tồn: ${base.qty}`;
+
   if(alts.length === 0){
-    alert("Không thấy sản phẩm thay thế theo OEM tương đương.\nHãy nhập thêm OEM thay thế cho sản phẩm.");
+    altList.innerHTML = `<div class="muted">Không thấy hàng thay thế theo OEM tương đương. Hãy nhập thêm OEM thay thế cho sản phẩm.</div>`;
+    dlgAlt.showModal();
     return;
   }
 
-  const msg = [
-    `Sản phẩm gốc: ${base.name}`,
-    `OEM: ${base.oem}`,
-    `OEM thay thế: ${(base.oemAlt||[]).join(", ") || "-"}`,
-    "",
-    "Gợi ý thay thế (ưu tiên còn hàng):",
-    ...alts.slice(0, 12).map((x, i) =>
-      `${i+1}) ${x.name} | OEM: ${x.oem} | Tồn: ${x.qty} | Giá: ${money(x.price||0)}`
-    ),
-    "",
-    "Mẹo: chọn món thay thế → bấm Chi tiết để xem hình."
-  ].join("\n");
+  altList.innerHTML = alts.slice(0, 24).map(it=>{
+    const checked=selectedIds.has(it.id)?"checked":"";
+    const qqty = getQuoteQty(it.id);
+    const altCount = (it.oemAlt||[]).length;
 
-  alert(msg);
+    return `
+      <div class="card">
+        <div class="img">
+          <div class="selectbox">
+            <input type="checkbox" ${checked} onchange="toggleSelect('${it.id}', this.checked)" />
+            <span class="small">Chọn</span>
+          </div>
+          ${it.image ? `<img src="${it.image}" alt="img" />` : `<div class="small">Không có hình</div>`}
+        </div>
+        <div class="body">
+          <div class="small">ID: <b>${it.id}</b></div>
+          <div class="small">OEM: <b>${it.oem || "-"}</b> ${altCount ? `• <b>${altCount}</b> mã thay` : ""}</div>
+          <h3 style="margin:6px 0 2px">${it.name || "-"}</h3>
+          <div class="kv">
+            <span class="tag">${it.brand || "Chưa hãng"}</span>
+            <span class="tag">${it.type || "Chưa loại"}</span>
+            <span class="tag">Tồn: <b>${Number(it.qty||0)}</b></span>
+            <span class="tag price">${money(it.price||0)}</span>
+          </div>
+
+          <div class="row" style="margin-top:8px">
+            <span class="small" style="font-weight:800">SL báo giá</span>
+            <input
+              type="number" min="1" step="1"
+              style="width:110px"
+              value="${qqty}"
+              oninput="setQuoteQtyLive('${it.id}', this.value)"
+            />
+            <span class="small">=</span>
+            <span class="small" style="font-weight:900">${money((Number(it.price||0))*qqty)}</span>
+          </div>
+
+          <div class="btns">
+            <button class="btn ghost" onclick="openDetail('${it.id}')">Chi tiết</button>
+            <button class="btn" onclick="openMove('${it.id}')">Nhập / Bán</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  dlgAlt.showModal();
 };
 
 // ===== Export CSV/JSON =====
@@ -602,7 +643,7 @@ btnExportInv.addEventListener("click", ()=>{
 });
 
 btnExportMoves.addEventListener("click", ()=>{
-  const header=["id","oem","oem_thay_the","ten","thuong_hieu","loai","ngay_gio","loai_thao_tac","so_luong","ghi_chu"];
+  const header=["id","oem","ten","thuong_hieu","loai","ngay_gio","loai_thao_tac","so_luong","ghi_chu"];
   const rows=[header];
   for(const it of items){
     const asc=[...(it.moves||[])].sort((a,b)=>a.at-b.at);
@@ -610,7 +651,6 @@ btnExportMoves.addEventListener("click", ()=>{
       rows.push([
         it.id,
         it.oem,
-        (it.oemAlt||[]).join(" | "),
         it.name,
         it.brand,
         it.type,
