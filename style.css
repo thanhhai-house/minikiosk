@@ -1,0 +1,72 @@
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: linear-gradient(
+      rgba(220, 245, 235, 0.95),
+      rgba(220, 245, 235, 0.95)
+    ),
+    url("https://images.unsplash.com/photo-1558981403-c5f9891b6a42");
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+  background: #0f766e;
+  color: white;
+}
+
+.form {
+  background: #ffffffcc;
+  margin: 20px;
+  padding: 16px;
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,.15);
+}
+
+.form input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.form button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: #0f766e;
+  color: white;
+  font-size: 16px;
+}
+
+.list {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.item {
+  background: white;
+  border-radius: 14px;
+  padding: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,.15);
+}
+
+.item img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.item h3 {
+  margin: 8px 0 4px;
+}
+
+.price {
+  color: #0f766e;
+  font-weight: bold;
+}
