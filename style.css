@@ -13,11 +13,7 @@ body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color:var(--text);
-  background:
-    linear-gradient(rgba(231,247,238,.92), rgba(231,247,238,.92)),
-    url("https://images.unsplash.com/photo-1525104698733-6d5f2b2b6e86?auto=format&fit=crop&w=2000&q=60");
-  background-size:cover;
-  background-position:center;
+  background:linear-gradient(rgba(231,247,238,.92), rgba(231,247,238,.92));
   min-height:100vh;
 }
 
@@ -53,11 +49,9 @@ h1{margin:0;font-size:18px}
   gap:12px;
 }
 @media (max-width: 820px){ .grid{grid-template-columns:1fr} }
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-@media (max-width: 520px){ .grid2{grid-template-columns:1fr} }
 
 .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}
-.field input,.select,.search{
+.field input,.search{
   width:100%;
   padding:11px 12px;
   border-radius:12px;
@@ -65,7 +59,7 @@ h1{margin:0;font-size:18px}
   outline:none;
   background:#fff;
 }
-.field input:focus,.select:focus,.search:focus{border-color:var(--teal)}
+.field input:focus,.search:focus{border-color:var(--teal)}
 
 .field textarea{
   width:100%;
@@ -108,9 +102,7 @@ h1{margin:0;font-size:18px}
   border:1px solid rgba(15,118,110,.35);
 }
 .btn.danger{ background:var(--danger); }
-.search{min-width:260px}
 
-/* Nút lớn */
 .typebar{
   display:flex;gap:10px;flex-wrap:wrap;
   padding:10px;
@@ -128,11 +120,7 @@ h1{margin:0;font-size:18px}
   min-width:160px;
   text-align:center;
 }
-.typebtn.active{
-  background:var(--teal);
-  color:#fff;
-  border-color:rgba(15,118,110,.6);
-}
+.typebtn.active{ background:var(--teal); color:#fff; }
 .typebtn small{display:block;font-weight:700;opacity:.9}
 
 .cards{
@@ -151,7 +139,7 @@ h1{margin:0;font-size:18px}
   overflow:hidden;
   box-shadow:0 8px 20px rgba(0,0,0,.08);
 }
-.card .img{height:150px;background:#f8fafc;display:flex;align-items:center;justify-content:center;position:relative}
+.card .img{height:150px;background:#f8fafc;display:flex;align-items:center;justify-content:center}
 .card img{max-width:100%;max-height:100%}
 .card .body{padding:12px}
 .kv{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
@@ -163,30 +151,8 @@ h1{margin:0;font-size:18px}
 .small{font-size:12px;color:var(--muted)}
 .card .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 
-.selectbox{
-  position:absolute;top:10px;left:10px;
-  background:#fff;border:1px solid var(--border);
-  border-radius:12px;padding:8px;display:flex;gap:8px;align-items:center;
-  box-shadow:0 6px 16px rgba(0,0,0,.10);
-}
-.selectbox input{width:18px;height:18px}
-
-.stats{
-  display:grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap:10px;
-  margin:12px 0;
-}
-@media (max-width: 720px){ .stats{grid-template-columns:1fr} }
-.stat{
-  background:#fff;border:1px solid var(--border);
-  border-radius:16px;padding:10px 12px;
-}
-.stat .k{font-size:12px;color:var(--muted)}
-.stat .v{font-size:18px;font-weight:900}
-
 .dlg::backdrop{background:rgba(0,0,0,.35)}
-.dlg{border:none;border-radius:16px;width:min(820px, 96vw);padding:0}
+.dlg{border:none;border-radius:16px;width:min(920px, 96vw);padding:0}
 .dlg-body{padding:16px}
 .dlg-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
 .dlg-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -206,25 +172,13 @@ h1{margin:0;font-size:18px}
 }
 .detail-img img{max-width:100%;max-height:100%;display:none}
 #dImgEmpty{position:absolute}
-.kv2{display:grid;grid-template-columns: 120px 1fr;gap:8px;align-items:center}
+.kv2{display:grid;grid-template-columns: 130px 1fr;gap:8px;align-items:center}
 .kv2 .k{font-size:12px;color:var(--muted)}
 .kv2 .v{font-weight:900}
 
-.history{margin-top:14px}
-.history h4{margin:0 0 8px;font-size:14px}
-.moves{display:grid;gap:8px}
-.move{
+.altbox{
   border:1px solid var(--border);
   border-radius:14px;
   padding:10px 12px;
   background:#fff;
-}
-.move .t{font-weight:900}
-.move .m{font-size:12px;color:var(--muted);margin-top:4px}
-
-.print-area{display:none}
-@media print{
-  body{background:#fff}
-  .topbar, .panel, dialog{display:none !important}
-  .print-area{display:block !important}
 }
