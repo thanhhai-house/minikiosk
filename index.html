@@ -62,12 +62,12 @@
 
         <div class="field">
           <label>Tên</label>
-          <input id="name" placeholder="VD: Bố thắng đĩa trước" required />
+          <input id="name" placeholder="VD: Lọc nhớt / Lọc gió..." required />
         </div>
 
         <div class="field">
-          <label>Thương hiệu (hãng xe)</label>
-          <input id="brand" placeholder="VD: Honda / Yamaha / Suzuki / Piaggio..." required />
+          <label>Thương hiệu (hãng xe / hãng lọc)</label>
+          <input id="brand" placeholder="VD: Sunfil / Sakura / Donaldson..." required />
         </div>
 
         <div class="field">
@@ -101,7 +101,7 @@
 
         <div class="field" style="grid-column:1/-1;">
           <label>Ghi thông tin sản phẩm</label>
-          <textarea id="note" rows="3" placeholder="VD: dùng cho Wave/RSX đời 2018+, hàng Thái..." required></textarea>
+          <textarea id="note" rows="3" placeholder="VD: dùng cho xe..., kích thước..., ren..., micron..." required></textarea>
         </div>
 
         <div class="row">
@@ -116,7 +116,7 @@
       <div class="panel-head row2">
         <div>
           <h2>📦 Danh sách phụ tùng</h2>
-          <p class="muted">Lọc nhanh theo nút lớn • Tick chọn để nhập số lượng báo giá • Nút “Thay thế” để tìm hàng tương đương</p>
+          <p class="muted">Tick chọn để nhập số lượng báo giá • “Thay thế” sẽ hiện popup có ảnh nếu có</p>
         </div>
         <div class="row">
           <input id="q" class="search" placeholder="Tìm OEM / OEM thay thế / tên / thương hiệu / loại / ghi chú..." />
@@ -176,6 +176,23 @@
     </form>
   </dialog>
 
+  <!-- Alternatives dialog -->
+  <dialog id="dlgAlt" class="dlg">
+    <form method="dialog" class="dlg-body">
+      <div class="dlg-top">
+        <h3 id="altTitle">Gợi ý thay thế</h3>
+        <button class="btn ghost" value="cancel">Đóng</button>
+      </div>
+
+      <p class="muted" id="altSub"></p>
+      <div id="altList" class="cards"></div>
+
+      <menu class="dlg-actions">
+        <button class="btn ghost" value="cancel">Đóng</button>
+      </menu>
+    </form>
+  </dialog>
+
   <!-- Move -->
   <dialog id="dlgMove" class="dlg">
     <form method="dialog" class="dlg-body">
@@ -209,7 +226,6 @@
   </dialog>
 
   <section id="printArea" class="print-area" aria-hidden="true"></section>
-
   <script src="app.js"></script>
 </body>
 </html>
