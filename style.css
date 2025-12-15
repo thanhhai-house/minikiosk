@@ -186,7 +186,7 @@ h1{margin:0;font-size:18px}
 .stat .v{font-size:18px;font-weight:900}
 
 .dlg::backdrop{background:rgba(0,0,0,.35)}
-.dlg{border:none;border-radius:16px;width:min(760px, 94vw);padding:0}
+.dlg{border:none;border-radius:16px;width:min(820px, 96vw);padding:0}
 .dlg-body{padding:16px}
 .dlg-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
 .dlg-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -206,7 +206,7 @@ h1{margin:0;font-size:18px}
 }
 .detail-img img{max-width:100%;max-height:100%;display:none}
 #dImgEmpty{position:absolute}
-.kv2{display:grid;grid-template-columns: 110px 1fr;gap:8px;align-items:center}
+.kv2{display:grid;grid-template-columns: 120px 1fr;gap:8px;align-items:center}
 .kv2 .k{font-size:12px;color:var(--muted)}
 .kv2 .v{font-weight:900}
 
