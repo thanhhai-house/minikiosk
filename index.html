@@ -1,90 +1,184 @@
-document.addEventListener("DOMContentLoaded", () => {
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kiosk Phụ Tùng Xe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
 
-const KEY = "KIOSK_FIX_V1";
-let items = JSON.parse(localStorage.getItem(KEY) || "[]");
+<body>
+  <header class="topbar">
+    <div class="wrap top">
+      <div class="brand">
+        <div class="logo">🚛</div>
+        <div>
+          <h1>Kiosk Phụ Tùng Xe</h1>
+          <p>ID • OEM • OEM thay thế • Thương hiệu • Loại • Giá • Tồn • Ảnh • Gợi ý thay thế (có ảnh nếu có)</p>
+        </div>
+      </div>
 
-const $ = id => document.getElementById(id);
-
-const form = $("form");
-const list = $("list");
-const preview = $("preview");
-const previewText = $("previewText");
-
-let currentImage = null;
-
-/* ===== IMAGE PREVIEW (FIX CHẮC CHẮN) ===== */
-$("image").addEventListener("change", e => {
-  const file = e.target.files[0];
-  if(!file) return;
-
-  const reader = new FileReader();
-  reader.onload = () => {
-    currentImage = reader.result;
-    preview.src = currentImage;
-    preview.style.display = "block";
-    previewText.style.display = "none";
-  };
-  reader.readAsDataURL(file);
-});
-
-/* ===== CLEAR FORM ===== */
-function clearForm(){
-  form.reset();
-  currentImage = null;
-  preview.src = "";
-  preview.style.display = "none";
-  previewText.style.display = "block";
-}
-
-/* ===== SAVE ===== */
-form.addEventListener("submit", e => {
-  e.preventDefault();
-
-  const item = {
-    id: Date.now(),
-    oem: $("oem").value,
-    name: $("name").value,
-    brand: $("brand").value,
-    type: $("type").value,
-    price: Number($("price").value),
-    qty: Number($("qty").value),
-    note: $("note").value,
-    image: currentImage
-  };
-
-  items.push(item);
-  localStorage.setItem(KEY, JSON.stringify(items));
-
-  clearForm();
-  render();
-});
-
-/* ===== RENDER LIST (FIX CHẮC CHẮN) ===== */
-function render(){
-  if(items.length === 0){
-    list.innerHTML = "<i>Chưa có sản phẩm</i>";
-    return;
-  }
-
-  list.innerHTML = items.map(it => `
-    <div class="card">
-      ${it.image ? `<img src="${it.image}">` : `<img src="" alt="">`}
-      <div class="body">
-        <b>${it.name}</b><br>
-        OEM: ${it.oem}<br>
-        <span class="tag">${it.brand}</span>
-        <span class="tag">${it.type}</span><br>
-        Tồn: <b>${it.qty}</b><br>
-        Giá: <b>${it.price.toLocaleString()}₫</b>
-        <div style="font-size:12px;color:#475569;margin-top:4px">${it.note||""}</div>
+      <div class="actions">
+        <button class="btn danger" id="btnReset">Xoá toàn bộ</button>
       </div>
     </div>
-  `).join("");
-}
+  </header>
 
-$("btnClear").addEventListener("click", clearForm);
+  <main class="wrap">
+    <section class="panel">
+      <div class="panel-head">
+        <h2>➕ Thêm / Cập nhật phụ tùng</h2>
+        <p class="muted">Chọn ảnh từ điện thoại để preview ngay.</p>
+      </div>
 
-/* ===== INIT ===== */
-render();
+      <form id="formPart" class="grid">
+        <input type="hidden" id="id" />
 
-});
+        <div class="field">
+          <label>ID</label>
+          <input id="idView" placeholder="Tự tạo" disabled />
+        </div>
+
+        <div class="field">
+          <label>Mã OEM (chính)</label>
+          <input id="oem" placeholder="VD: SO-2718" required />
+        </div>
+
+        <div class="field" style="grid-column:1/-1;">
+          <label>Mã OEM tương đương / thay thế (cách nhau bằng dấu phẩy)</label>
+          <input id="oemAlt" placeholder="VD: C85180, C-85180, ..."/>
+          <div class="hint">Nhập nhiều mã, phân tách bằng dấu phẩy</div>
+        </div>
+
+        <div class="field">
+          <label>Tên</label>
+          <input id="name" placeholder="VD: Lọc nhớt" required />
+        </div>
+
+        <div class="field">
+          <label>Thương hiệu</label>
+          <input id="brand" placeholder="VD: Sunfil / Sakura..." required />
+        </div>
+
+        <div class="field">
+          <label>Loại</label>
+          <input id="type" placeholder="VD: Lọc / Phanh / Nhớt..." required />
+        </div>
+
+        <div class="field">
+          <label>Giá (VNĐ)</label>
+          <input id="price" type="number" min="0" step="1000" required />
+        </div>
+
+        <div class="field">
+          <label>Số lượng tồn</label>
+          <input id="qty" type="number" min="0" step="1" required />
+        </div>
+
+        <div class="field">
+          <label>Hình ảnh</label>
+          <input id="image" type="file" accept="image/*" />
+          <div class="hint">Chọn ảnh → preview sẽ hiện ngay</div>
+        </div>
+
+        <div class="field preview">
+          <label>Preview ảnh</label>
+          <div class="imgbox">
+            <img id="previewImg" alt="preview" />
+            <div id="previewEmpty" class="muted">Chưa có hình</div>
+          </div>
+        </div>
+
+        <div class="field" style="grid-column:1/-1;">
+          <label>Ghi chú</label>
+          <textarea id="note" rows="3" placeholder="VD: Ren..., kích thước..., dùng cho xe..." required></textarea>
+        </div>
+
+        <div class="row">
+          <button class="btn" type="submit" id="btnSave">Lưu</button>
+          <button class="btn ghost" type="button" id="btnClear">Nhập mới</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head row2">
+        <div>
+          <h2>📦 Danh sách sản phẩm</h2>
+          <p class="muted">Bấm “Thay thế” để xem danh sách có ảnh (nếu có) và chọn “thay thế chính”.</p>
+        </div>
+        <div class="row">
+          <input id="q" class="search" placeholder="Tìm ID/OEM/OEM thay thế/tên/thương hiệu/loại/ghi chú..." />
+          <button class="btn ghost" id="btnClearSearch" type="button">✖</button>
+        </div>
+      </div>
+
+      <div id="typeButtons" class="typebar"></div>
+      <div id="brandButtons" class="typebar" style="margin-top:10px"></div>
+
+      <div id="list" class="cards"></div>
+    </section>
+  </main>
+
+  <!-- Detail -->
+  <dialog id="dlgDetail" class="dlg">
+    <form method="dialog" class="dlg-body">
+      <div class="dlg-top">
+        <h3 id="dTitle">Chi tiết</h3>
+        <button class="btn ghost" value="cancel">Đóng</button>
+      </div>
+
+      <div class="detail">
+        <div class="detail-img">
+          <img id="dImg" alt="img" />
+          <div id="dImgEmpty" class="muted">Không có hình</div>
+        </div>
+
+        <div class="detail-info">
+          <div class="kv2">
+            <div class="k">ID</div><div class="v" id="dId"></div>
+            <div class="k">OEM</div><div class="v" id="dOem"></div>
+            <div class="k">OEM thay thế</div><div class="v" id="dOemAlt"></div>
+            <div class="k">Tên</div><div class="v" id="dName"></div>
+            <div class="k">Thương hiệu</div><div class="v" id="dBrand"></div>
+            <div class="k">Loại</div><div class="v" id="dType"></div>
+            <div class="k">Giá</div><div class="v price" id="dPrice"></div>
+            <div class="k">Tồn</div><div class="v" id="dQty"></div>
+            <div class="k">Ghi chú</div><div class="v" id="dNote"></div>
+          </div>
+
+          <div class="altbox" id="altBox" style="margin-top:12px; display:none;">
+            <div style="font-weight:900; margin-bottom:6px;">🔁 Sản phẩm thay thế chính</div>
+            <div id="altInfo" class="muted"></div>
+            <div class="row" style="margin-top:8px">
+              <button class="btn ghost" type="button" id="btnOpenAltDetail">Mở chi tiết thay thế</button>
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:12px">
+            <button class="btn ghost" type="button" id="btnAltFromDetail">Gợi ý thay thế</button>
+          </div>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Alternatives -->
+  <dialog id="dlgAlt" class="dlg">
+    <form method="dialog" class="dlg-body">
+      <div class="dlg-top">
+        <h3 id="altTitle">Gợi ý thay thế</h3>
+        <button class="btn ghost" value="cancel">Đóng</button>
+      </div>
+      <p class="muted" id="altSub"></p>
+      <div id="altList" class="cards"></div>
+      <menu class="dlg-actions">
+        <button class="btn ghost" value="cancel">Đóng</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- MUST be at end -->
+  <script src="app.js"></script>
+</body>
+</html>
