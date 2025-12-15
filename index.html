@@ -13,13 +13,14 @@
         <div class="logo">🚛</div>
         <div>
           <h1>Kiosk Phụ Tùng Xe</h1>
-          <p>ID • OEM • Thương hiệu • Tồn kho • Ảnh • Nhập/Bán • Báo giá • Xuất CSV (Google Sheets)</p>
+          <p>ID • OEM • Thương hiệu • Loại • Ghi chú • Tồn • Ảnh • Nhập/Bán • Báo giá (có SL) • Sync Google Sheet</p>
         </div>
       </div>
 
       <div class="actions">
-        <button class="btn ghost" id="btnExportInv">Xuất CSV tồn kho</button>
+        <button class="btn" id="btnSyncMoves">Đẩy nhập/xuất lên Google Sheet</button>
         <button class="btn ghost" id="btnExportMoves">Xuất CSV nhập/xuất</button>
+        <button class="btn ghost" id="btnExportInv">Xuất CSV tồn kho</button>
 
         <button class="btn ghost" id="btnExportJson">Xuất JSON</button>
         <label class="btn ghost">
@@ -33,7 +34,6 @@
   </header>
 
   <main class="wrap">
-    <!-- FORM -->
     <section class="panel">
       <div class="panel-head">
         <h2>➕ Thêm / Cập nhật phụ tùng</h2>
@@ -65,17 +65,17 @@
 
         <div class="field">
           <label>Loại (Danh mục)</label>
-          <input id="type" placeholder="VD: Lọc / Phanh / Nhớt / Nhông sên dĩa..." required />
+          <input id="type" placeholder="VD: Lọc / Phanh / Nhớt..." required />
         </div>
 
         <div class="field">
           <label>Giá tiền (VNĐ)</label>
-          <input id="price" type="number" min="0" step="1000" placeholder="VD: 155000" required />
+          <input id="price" type="number" min="0" step="1000" required />
         </div>
 
         <div class="field">
           <label>Số lượng tồn</label>
-          <input id="qty" type="number" min="0" step="1" placeholder="VD: 10" required />
+          <input id="qty" type="number" min="0" step="1" required />
         </div>
 
         <div class="field">
@@ -92,6 +92,11 @@
           </div>
         </div>
 
+        <div class="field" style="grid-column:1/-1;">
+          <label>Ghi thông tin sản phẩm</label>
+          <textarea id="note" rows="3" placeholder="VD: dùng cho Wave/RSX đời 2018+, hàng Thái..." required></textarea>
+        </div>
+
         <div class="row">
           <button class="btn" type="submit" id="btnSave">Lưu phụ tùng</button>
           <button class="btn ghost" type="button" id="btnClear">Nhập mới</button>
@@ -99,31 +104,29 @@
       </form>
     </section>
 
-    <!-- LIST -->
     <section class="panel">
       <div class="panel-head row2">
         <div>
           <h2>📦 Danh sách phụ tùng</h2>
-          <p class="muted">Bấm nút lớn để lọc theo loại/thương hiệu • Chọn nhiều để in báo giá</p>
+          <p class="muted">Lọc nhanh theo nút lớn • Tick chọn để nhập số lượng báo giá</p>
         </div>
         <div class="row">
-          <input id="q" class="search" placeholder="Tìm theo OEM / tên / loại / thương hiệu..." />
+          <input id="q" class="search" placeholder="Tìm OEM / tên / thương hiệu / loại / ghi chú..." />
+          <button class="btn ghost" id="btnClearSearch" type="button">✖ Xoá tìm</button>
           <button class="btn ghost" id="btnClearSelect">Bỏ chọn</button>
           <button class="btn" id="btnPrintQuote">In báo giá (đã chọn)</button>
         </div>
       </div>
 
-      <!-- Nút lớn lọc nhanh -->
       <div id="typeButtons" class="typebar"></div>
       <div id="brandButtons" class="typebar" style="margin-top:10px"></div>
 
       <div id="stats" class="stats"></div>
-
       <div id="list" class="cards"></div>
     </section>
   </main>
 
-  <!-- DIALOG: Chi tiết -->
+  <!-- Detail -->
   <dialog id="dlgDetail" class="dlg">
     <form method="dialog" class="dlg-body">
       <div class="dlg-top">
@@ -146,6 +149,7 @@
             <div class="k">Loại</div><div class="v" id="dType"></div>
             <div class="k">Giá</div><div class="v price" id="dPrice"></div>
             <div class="k">Tồn</div><div class="v" id="dQty"></div>
+            <div class="k">Ghi chú</div><div class="v" id="dNote" style="font-weight:700"></div>
           </div>
 
           <div class="row" style="margin-top:10px">
@@ -162,7 +166,7 @@
     </form>
   </dialog>
 
-  <!-- DIALOG: Nhập/Bán -->
+  <!-- Move -->
   <dialog id="dlgMove" class="dlg">
     <form method="dialog" class="dlg-body">
       <h3 id="dlgTitle">Nhập/Bán</h3>
@@ -194,7 +198,6 @@
     </form>
   </dialog>
 
-  <!-- KHUNG IN (ẩn) -->
   <section id="printArea" class="print-area" aria-hidden="true"></section>
 
   <script src="app.js"></script>
