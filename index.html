@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Kiosk Phụ Tùng Xe</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <h1>🛵 Kiosk Phụ Tùng Xe</h1>
+  <p>Nhập phụ tùng – Giá – Hình ảnh</p>
+</header>
+
+<section class="form">
+  <h2>➕ Thêm phụ tùng</h2>
+
+  <input id="name" placeholder="Tên phụ tùng" />
+  <input id="price" type="number" placeholder="Giá (VNĐ)" />
+  <input id="brand" placeholder="Hãng xe (Honda, Yamaha…)" />
+
+  <input id="image" type="file" accept="image/*" />
+
+  <button onclick="addItem()">Lưu phụ tùng</button>
+</section>
+
+<section class="list" id="list"></section>
+
+<script src="app.js"></script>
+</body>
+</html>
