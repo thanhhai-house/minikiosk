@@ -1,112 +1,90 @@
-<!doctype html>
-<html lang="vi">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Kiosk Phụ Tùng Xe</title>
+document.addEventListener("DOMContentLoaded", () => {
 
-  <style>
-    body{
-      font-family:system-ui,-apple-system;
-      margin:0;
-      background:#e7f7ee;
-    }
-    header{
-      background:#0f766e;
-      color:#fff;
-      padding:12px 16px;
-      font-size:20px;
-      font-weight:900;
-    }
-    main{ padding:16px; max-width:1100px; margin:auto; }
+const KEY = "KIOSK_FIX_V1";
+let items = JSON.parse(localStorage.getItem(KEY) || "[]");
 
-    .grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px; }
-    input,textarea,button{
-      padding:10px;
-      border-radius:10px;
-      border:1px solid #cbd5e1;
-      font-size:14px;
-    }
-    button{
-      background:#0f766e;
-      color:#fff;
-      font-weight:700;
-      cursor:pointer;
-    }
-    button.ghost{ background:#fff; color:#0f766e; }
-    textarea{ resize:vertical; }
+const $ = id => document.getElementById(id);
 
-    .preview{
-      height:160px;
-      border:1px dashed #94a3b8;
-      border-radius:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:#fff;
-    }
-    .preview img{ max-height:100%; max-width:100%; }
+const form = $("form");
+const list = $("list");
+const preview = $("preview");
+const previewText = $("previewText");
 
-    .cards{
-      display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-      gap:14px;
-      margin-top:20px;
-    }
-    .card{
-      background:#fff;
-      border-radius:14px;
-      overflow:hidden;
-      box-shadow:0 6px 16px rgba(0,0,0,.08);
-    }
-    .card img{
-      width:100%;
-      height:160px;
-      object-fit:contain;
-      background:#f1f5f9;
-    }
-    .card .body{ padding:12px; }
-    .tag{
-      display:inline-block;
-      background:#e2e8f0;
-      padding:2px 8px;
-      border-radius:999px;
-      font-size:12px;
-      margin-right:4px;
-    }
-  </style>
-</head>
+let currentImage = null;
 
-<body>
-<header>🚛 KIOSK PHỤ TÙNG XE (FIX)</header>
+/* ===== IMAGE PREVIEW (FIX CHẮC CHẮN) ===== */
+$("image").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if(!file) return;
 
-<main>
-  <h3>➕ Thêm phụ tùng</h3>
+  const reader = new FileReader();
+  reader.onload = () => {
+    currentImage = reader.result;
+    preview.src = currentImage;
+    preview.style.display = "block";
+    previewText.style.display = "none";
+  };
+  reader.readAsDataURL(file);
+});
 
-  <form id="form" class="grid">
-    <input id="oem" placeholder="Mã OEM" required />
-    <input id="name" placeholder="Tên sản phẩm" required />
-    <input id="brand" placeholder="Thương hiệu" required />
-    <input id="type" placeholder="Loại (lọc / phanh...)" required />
-    <input id="price" type="number" placeholder="Giá tiền" required />
-    <input id="qty" type="number" placeholder="Số lượng" required />
+/* ===== CLEAR FORM ===== */
+function clearForm(){
+  form.reset();
+  currentImage = null;
+  preview.src = "";
+  preview.style.display = "none";
+  previewText.style.display = "block";
+}
 
-    <input id="image" type="file" accept="image/*" />
-    <div class="preview">
-      <img id="preview" />
-      <span id="previewText">Chưa có hình</span>
+/* ===== SAVE ===== */
+form.addEventListener("submit", e => {
+  e.preventDefault();
+
+  const item = {
+    id: Date.now(),
+    oem: $("oem").value,
+    name: $("name").value,
+    brand: $("brand").value,
+    type: $("type").value,
+    price: Number($("price").value),
+    qty: Number($("qty").value),
+    note: $("note").value,
+    image: currentImage
+  };
+
+  items.push(item);
+  localStorage.setItem(KEY, JSON.stringify(items));
+
+  clearForm();
+  render();
+});
+
+/* ===== RENDER LIST (FIX CHẮC CHẮN) ===== */
+function render(){
+  if(items.length === 0){
+    list.innerHTML = "<i>Chưa có sản phẩm</i>";
+    return;
+  }
+
+  list.innerHTML = items.map(it => `
+    <div class="card">
+      ${it.image ? `<img src="${it.image}">` : `<img src="" alt="">`}
+      <div class="body">
+        <b>${it.name}</b><br>
+        OEM: ${it.oem}<br>
+        <span class="tag">${it.brand}</span>
+        <span class="tag">${it.type}</span><br>
+        Tồn: <b>${it.qty}</b><br>
+        Giá: <b>${it.price.toLocaleString()}₫</b>
+        <div style="font-size:12px;color:#475569;margin-top:4px">${it.note||""}</div>
+      </div>
     </div>
+  `).join("");
+}
 
-    <textarea id="note" placeholder="Ghi chú sản phẩm" style="grid-column:1/-1"></textarea>
+$("btnClear").addEventListener("click", clearForm);
 
-    <button type="submit">Lưu sản phẩm</button>
-    <button type="button" class="ghost" id="btnClear">Nhập mới</button>
-  </form>
+/* ===== INIT ===== */
+render();
 
-  <h3 style="margin-top:30px">📦 Danh sách sản phẩm</h3>
-  <div id="list" class="cards"></div>
-</main>
-
-<script src="app.js"></script>
-</body>
-</html>
+});
