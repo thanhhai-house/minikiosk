@@ -14,17 +14,24 @@
         <div class="logo">🚛</div>
         <div>
           <h1>Kiosk Phụ Tùng Xe</h1>
-          <p>ID • OEM • OEM thay thế • Thương hiệu • Loại • Giá • Tồn • Ảnh • Gợi ý thay thế (có ảnh nếu có)</p>
+          <p>ID • OEM • OEM thay thế • Thương hiệu • Loại • Giá • Tồn • Ảnh • Báo giá • Sync Google Sheet</p>
         </div>
       </div>
 
       <div class="actions">
+        <button class="btn ghost" id="btnClearSelect">Bỏ chọn</button>
+        <button class="btn" id="btnPrintQuote">In báo giá (đã chọn)</button>
+
+        <button class="btn" id="btnSyncInventory">Đẩy TỒN KHO lên GG Sheet</button>
+        <button class="btn ghost" id="btnSyncQuote">Đẩy BÁO GIÁ lên GG Sheet</button>
+
         <button class="btn danger" id="btnReset">Xoá toàn bộ</button>
       </div>
     </div>
   </header>
 
   <main class="wrap">
+    <!-- FORM -->
     <section class="panel">
       <div class="panel-head">
         <h2>➕ Thêm / Cập nhật phụ tùng</h2>
@@ -46,7 +53,7 @@
 
         <div class="field" style="grid-column:1/-1;">
           <label>Mã OEM tương đương / thay thế (cách nhau bằng dấu phẩy)</label>
-          <input id="oemAlt" placeholder="VD: C85180, C-85180, ..."/>
+          <input id="oemAlt" placeholder="VD: C85180, C-85180, ..." />
           <div class="hint">Nhập nhiều mã, phân tách bằng dấu phẩy</div>
         </div>
 
@@ -101,11 +108,12 @@
       </form>
     </section>
 
+    <!-- LIST -->
     <section class="panel">
       <div class="panel-head row2">
         <div>
           <h2>📦 Danh sách sản phẩm</h2>
-          <p class="muted">Bấm “Thay thế” để xem danh sách có ảnh (nếu có) và chọn “thay thế chính”.</p>
+          <p class="muted">Chọn checkbox để in báo giá • “Thay thế” sẽ hiện popup có ảnh nếu có</p>
         </div>
         <div class="row">
           <input id="q" class="search" placeholder="Tìm ID/OEM/OEM thay thế/tên/thương hiệu/loại/ghi chú..." />
@@ -178,12 +186,13 @@
     </form>
   </dialog>
 
-  <!-- MUST be at end -->
-  <script src="app.js"></script>
+  <!-- Footer bản quyền chạy chữ -->
   <footer class="copyright">
-  <div class="marquee">
-    <span>© 2025 HẢI VÕ • Kiosk Phụ Tùng Xe • All rights reserved • © 2025 HẢI VÕ • Kiosk Phụ Tùng Xe • All rights reserved • </span>
-  </div>
-</footer>
+    <div class="marquee">
+      <span>© 2025 HẢI VÕ • Kiosk Phụ Tùng Xe • All rights reserved • © 2025 HẢI VÕ • Kiosk Phụ Tùng Xe • All rights reserved • </span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
 </body>
 </html>
