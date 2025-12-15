@@ -1,31 +1,202 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Kiosk Phụ Tùng Xe</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <header class="topbar">
+    <div class="wrap top">
+      <div class="brand">
+        <div class="logo">🚛</div>
+        <div>
+          <h1>Kiosk Phụ Tùng Xe</h1>
+          <p>ID • OEM • Thương hiệu • Tồn kho • Ảnh • Nhập/Bán • Báo giá • Xuất CSV (Google Sheets)</p>
+        </div>
+      </div>
 
-<header>
-  <h1>🛵 Kiosk Phụ Tùng Xe</h1>
-  <p>Nhập phụ tùng – Giá – Hình ảnh</p>
-</header>
+      <div class="actions">
+        <button class="btn ghost" id="btnExportInv">Xuất CSV tồn kho</button>
+        <button class="btn ghost" id="btnExportMoves">Xuất CSV nhập/xuất</button>
 
-<section class="form">
-  <h2>➕ Thêm phụ tùng</h2>
+        <button class="btn ghost" id="btnExportJson">Xuất JSON</button>
+        <label class="btn ghost">
+          Nhập JSON
+          <input id="fileImport" type="file" accept="application/json" hidden />
+        </label>
 
-  <input id="name" placeholder="Tên phụ tùng" />
-  <input id="price" type="number" placeholder="Giá (VNĐ)" />
-  <input id="brand" placeholder="Hãng xe (Honda, Yamaha…)" />
+        <button class="btn danger" id="btnReset">Xoá toàn bộ</button>
+      </div>
+    </div>
+  </header>
 
-  <input id="image" type="file" accept="image/*" />
+  <main class="wrap">
+    <!-- FORM -->
+    <section class="panel">
+      <div class="panel-head">
+        <h2>➕ Thêm / Cập nhật phụ tùng</h2>
+        <p class="muted">Chụp ảnh hoặc chọn ảnh từ điện thoại. Dữ liệu lưu trong trình duyệt máy bạn.</p>
+      </div>
 
-  <button onclick="addItem()">Lưu phụ tùng</button>
-</section>
+      <form id="formPart" class="grid">
+        <input type="hidden" id="id" />
 
-<section class="list" id="list"></section>
+        <div class="field">
+          <label>ID</label>
+          <input id="idView" placeholder="Tự tạo" disabled />
+        </div>
 
-<script src="app.js"></script>
+        <div class="field">
+          <label>Mã OEM</label>
+          <input id="oem" placeholder="VD: 12345-K56-VN" required />
+        </div>
+
+        <div class="field">
+          <label>Tên</label>
+          <input id="name" placeholder="VD: Bố thắng đĩa trước" required />
+        </div>
+
+        <div class="field">
+          <label>Thương hiệu (hãng xe)</label>
+          <input id="brand" placeholder="VD: Honda / Yamaha / Suzuki / Piaggio..." required />
+        </div>
+
+        <div class="field">
+          <label>Loại (Danh mục)</label>
+          <input id="type" placeholder="VD: Lọc / Phanh / Nhớt / Nhông sên dĩa..." required />
+        </div>
+
+        <div class="field">
+          <label>Giá tiền (VNĐ)</label>
+          <input id="price" type="number" min="0" step="1000" placeholder="VD: 155000" required />
+        </div>
+
+        <div class="field">
+          <label>Số lượng tồn</label>
+          <input id="qty" type="number" min="0" step="1" placeholder="VD: 10" required />
+        </div>
+
+        <div class="field">
+          <label>Hình ảnh</label>
+          <input id="image" type="file" accept="image/*" />
+          <div class="hint">Bấm chọn hình → chọn Camera để chụp</div>
+        </div>
+
+        <div class="field preview">
+          <label>Xem trước</label>
+          <div class="imgbox">
+            <img id="previewImg" alt="preview" />
+            <div id="previewEmpty" class="muted">Chưa có hình</div>
+          </div>
+        </div>
+
+        <div class="row">
+          <button class="btn" type="submit" id="btnSave">Lưu phụ tùng</button>
+          <button class="btn ghost" type="button" id="btnClear">Nhập mới</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- LIST -->
+    <section class="panel">
+      <div class="panel-head row2">
+        <div>
+          <h2>📦 Danh sách phụ tùng</h2>
+          <p class="muted">Bấm nút lớn để lọc theo loại/thương hiệu • Chọn nhiều để in báo giá</p>
+        </div>
+        <div class="row">
+          <input id="q" class="search" placeholder="Tìm theo OEM / tên / loại / thương hiệu..." />
+          <button class="btn ghost" id="btnClearSelect">Bỏ chọn</button>
+          <button class="btn" id="btnPrintQuote">In báo giá (đã chọn)</button>
+        </div>
+      </div>
+
+      <!-- Nút lớn lọc nhanh -->
+      <div id="typeButtons" class="typebar"></div>
+      <div id="brandButtons" class="typebar" style="margin-top:10px"></div>
+
+      <div id="stats" class="stats"></div>
+
+      <div id="list" class="cards"></div>
+    </section>
+  </main>
+
+  <!-- DIALOG: Chi tiết -->
+  <dialog id="dlgDetail" class="dlg">
+    <form method="dialog" class="dlg-body">
+      <div class="dlg-top">
+        <h3 id="dTitle">Chi tiết</h3>
+        <button class="btn ghost" value="cancel">Đóng</button>
+      </div>
+
+      <div class="detail">
+        <div class="detail-img">
+          <img id="dImg" alt="img" />
+          <div id="dImgEmpty" class="muted">Không có hình</div>
+        </div>
+
+        <div class="detail-info">
+          <div class="kv2">
+            <div class="k">ID</div><div class="v" id="dId"></div>
+            <div class="k">OEM</div><div class="v" id="dOem"></div>
+            <div class="k">Tên</div><div class="v" id="dName"></div>
+            <div class="k">Thương hiệu</div><div class="v" id="dBrand"></div>
+            <div class="k">Loại</div><div class="v" id="dType"></div>
+            <div class="k">Giá</div><div class="v price" id="dPrice"></div>
+            <div class="k">Tồn</div><div class="v" id="dQty"></div>
+          </div>
+
+          <div class="row" style="margin-top:10px">
+            <button class="btn ghost" type="button" id="btnPrintSingle">In báo giá (1 sp)</button>
+            <button class="btn" type="button" id="btnMoveFromDetail">Nhập / Bán</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="history">
+        <h4>Lịch sử nhập/xuất</h4>
+        <div id="dMoves" class="moves"></div>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- DIALOG: Nhập/Bán -->
+  <dialog id="dlgMove" class="dlg">
+    <form method="dialog" class="dlg-body">
+      <h3 id="dlgTitle">Nhập/Bán</h3>
+      <p class="muted" id="dlgSub"></p>
+
+      <div class="grid2">
+        <div class="field">
+          <label>Loại thao tác</label>
+          <select id="moveKind" class="select">
+            <option value="in">Nhập (+)</option>
+            <option value="out">Bán (-)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Số lượng</label>
+          <input id="moveQty" type="number" min="1" step="1" value="1" />
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Ghi chú (tuỳ chọn)</label>
+        <input id="moveNote" placeholder="VD: bán cho khách A / nhập lô mới..." />
+      </div>
+
+      <menu class="dlg-actions">
+        <button class="btn ghost" value="cancel">Huỷ</button>
+        <button class="btn" id="btnDoMove" value="ok">Xác nhận</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- KHUNG IN (ẩn) -->
+  <section id="printArea" class="print-area" aria-hidden="true"></section>
+
+  <script src="app.js"></script>
 </body>
 </html>
