@@ -3,253 +3,199 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>GreenShop Admin - Sản phẩm & Kho</title>
+  <title> Danh mục sản phẩm</title>
 
-  <!-- Icons -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
-  <!-- Top bar -->
+
+  <!-- TOP HOTLINE BAR -->
   <div class="topbar">
     <div class="container topbar-inner">
       <div class="topbar-left">
-        <span><i class="fa-solid fa-phone"></i> Hotline: <b>0779 030 356</b></span>
-        <span class="dot">•</span>
-        <span><i class="fa-regular fa-clock"></i> 8:00 - 16:30 (T2 - T7)</span>
+        Hotline đặt hàng: <b>0348074177</b>
+        <span class="sep">•</span>
+        Hotline góp ý: <b>0348074177</b> (Mr Hải)
+        <span class="sep">•</span>
+        Thời gian làm việc: <b>8:00 - 16:30 (T2 - T7)</b>
       </div>
-      <div class="topbar-right">
-        <button id="btnLogin" class="btn ghost sm" type="button">
-          <i class="fa-solid fa-user-shield"></i>
-          <span id="loginLabel">Đăng nhập</span>
-        </button>
-        <button id="btnInventory" class="btn ghost sm" type="button">
-          <i class="fa-solid fa-warehouse"></i>
-          Kho (Nhập/Xuất)
-        </button>
-        <button id="btnImportExport" class="btn ghost sm" type="button">
-          <i class="fa-solid fa-file-arrow-up"></i>
-          Nhập/Xuất dữ liệu
-        </button>
-      </div>
+
+      <button id="btnOpenAdmin" class="link-btn" type="button">
+        <i class="fa-solid fa-user-shield"></i> Đăng nhập Admin
+      </button>
     </div>
   </div>
 
-  <!-- Header -->
+  <!-- HEADER -->
   <header class="header">
     <div class="container header-inner">
-      <a class="brand" href="#">
-        <div class="brand-logo"><i class="fa-solid fa-leaf"></i></div>
+      <div class="brand">
+        <div class="brand-logo">
+          <i class="fa-solid fa-gear"></i>
+        </div>
         <div class="brand-text">
-          <div class="brand-title">Green<span>Shop</span></div>
-          <div class="brand-sub">Catalog + Inventory (GitHub Pages)</div>
+          <div class="brand-title">PAS - YOUR GENUINE SUPPLIER</div>
+          <div class="brand-sub">SAKURA</div>
         </div>
-      </a>
-
-      <div class="search">
-        <div class="field">
-          <i class="fa-solid fa-layer-group"></i>
-          <select id="categorySelect" class="control">
-            <option value="all">Tất cả danh mục</option>
-          </select>
-        </div>
-
-        <div class="field grow">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input id="searchInput" class="control" placeholder="Tìm theo tên / SKU / thương hiệu..." />
-        </div>
-
-        <button id="searchBtn" class="btn primary" type="button">
-          <i class="fa-solid fa-magnifying-glass"></i> Tìm
-        </button>
       </div>
 
-      <div class="header-actions">
-        <div class="pill">
-          <i class="fa-solid fa-circle-check"></i>
-          <span>Giao diện thật • Preview ảnh • Kho nhập/xuất</span>
+      <div class="search">
+        <select id="categorySelect" class="search-select">
+          <option value="all">Chọn danh mục</option>
+        </select>
+        <input id="searchInput" class="search-input" placeholder="Tìm kiếm..." />
+        <button id="searchBtn" class="search-btn" type="button">
+          <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+
+        <div class="quick-links" id="quickLinks">
+          Két nước | Két gió | Gạt mưa | Bơm xăng
+        </div>
+      </div>
+
+      <div class="account-cart">
+        <div class="acc">
+          <i class="fa-regular fa-circle-user"></i>
+          <div>
+            <div class="acc-top">Khách</div>
+            <div class="acc-bot">Tài khoản</div>
+          </div>
+        </div>
+        <div class="cart">
+          <i class="fa-solid fa-cart-shopping"></i>
+          <div>
+            <div class="acc-top">Giỏ hàng</div>
+            <div class="acc-bot"><span id="cartCount">0</span></div>
+          </div>
+          <span class="cart-badge" id="cartBadge">0</span>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Hero slider -->
-  <section class="hero">
-    <div class="container hero-inner">
-      <div class="slider" id="slider">
-        <div class="slide active">
-          <div class="slide-bg bg1"></div>
-          <div class="slide-content">
-            <div class="kicker">Nền xanh • Modern UI</div>
-            <h2>Catalog sản phẩm đẹp như web thật</h2>
-            <p>Chạy trên GitHub Pages, lưu IndexedDB, hỗ trợ upload ảnh từ điện thoại + preview trước khi lưu.</p>
-            <div class="slide-actions">
-              <button class="btn primary" type="button" id="btnQuickAdd">
-                <i class="fa-solid fa-plus"></i> Thêm sản phẩm
-              </button>
-              <button class="btn" type="button" id="btnQuickInventory">
-                <i class="fa-solid fa-warehouse"></i> Vào kho
-              </button>
-            </div>
-          </div>
-        </div>
+  <!-- NAV -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <button class="nav-cat-btn" id="btnToggleSidebar" type="button">
+        <i class="fa-solid fa-bars"></i> DANH MỤC SẢN PHẨM
+      </button>
 
-        <div class="slide">
-          <div class="slide-bg bg2"></div>
-          <div class="slide-content">
-            <div class="kicker">Nhập / Xuất</div>
-            <h2>Quản lý tồn kho bằng phiếu</h2>
-            <p>Nhập kho / Xuất kho, xem lịch sử, lọc theo sản phẩm. Dữ liệu lưu riêng.</p>
-            <div class="slide-actions">
-              <button class="btn primary" type="button" id="btnOpenInventoryFromSlide">
-                <i class="fa-solid fa-file-invoice"></i> Tạo phiếu
-              </button>
-              <button class="btn" type="button" id="btnExportFromSlide">
-                <i class="fa-solid fa-download"></i> Xuất dữ liệu
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="slider-dots" id="sliderDots"></div>
-        <button class="slider-nav prev" id="prevSlide" type="button" aria-label="Prev"><i class="fa-solid fa-chevron-left"></i></button>
-        <button class="slider-nav next" id="nextSlide" type="button" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
-      </div>
-
-      <div class="hero-side">
-        <div class="stat-card">
-          <div class="stat-title"><i class="fa-solid fa-boxes-stacked"></i> Tổng sản phẩm</div>
-          <div class="stat-value" id="statProducts">0</div>
-          <div class="stat-sub">IndexedDB • ổn cho 1000+ sp (text)</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-title"><i class="fa-solid fa-warehouse"></i> Tổng tồn</div>
-          <div class="stat-value" id="statStock">0</div>
-          <div class="stat-sub">Tồn = nhập - xuất</div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-title"><i class="fa-solid fa-bolt"></i> Gợi ý</div>
-          <div class="stat-sub">
-            Nếu muốn lưu ảnh lớn & nhiều → dùng Cloud (Firebase/Supabase/Cloudinary) và lưu URL.
-          </div>
-        </div>
-      </div>
+      <a class="nav-link active" href="#">Trang chủ</a>
+      <a class="nav-link" href="#">Sản phẩm <i class="fa-solid fa-caret-down"></i></a>
+      <a class="nav-link" href="#">Khuyến mãi Hot</a>
+      <a class="nav-link" href="#">Catalog <i class="fa-solid fa-caret-down"></i></a>
+      <a class="nav-link" href="#">Liên hệ</a>
+      <a class="nav-link" href="#">Về chúng tôi</a>
+      <a class="nav-link" href="#">Tin tức</a>
     </div>
-  </section>
+  </nav>
 
-  <!-- Main -->
+  <!-- MAIN -->
   <main class="container main">
-    <aside class="sidebar">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
       <div class="sidebar-head">
-        <div class="sidebar-title"><i class="fa-solid fa-list"></i> Danh mục</div>
-        <button class="btn ghost sm" type="button" id="btnResetFilters">
-          <i class="fa-solid fa-rotate"></i> Reset
-        </button>
-      </div>
-
-      <div class="chips" id="categoryChips"></div>
-
-      <div class="sidebar-block">
-        <div class="sidebar-title"><i class="fa-solid fa-tags"></i> Thương hiệu</div>
-        <div class="chips" id="brandChips"></div>
-      </div>
-
-      <div class="sidebar-block">
-        <div class="sidebar-title"><i class="fa-solid fa-arrow-up-wide-short"></i> Sắp xếp</div>
-        <select id="sortSelect" class="control">
-          <option value="newest">Mới nhất</option>
-          <option value="az">Tên A → Z</option>
-          <option value="za">Tên Z → A</option>
-          <option value="stockDesc">Tồn giảm dần</option>
-          <option value="stockAsc">Tồn tăng dần</option>
-        </select>
-      </div>
-
-      <div class="sidebar-block hintbox">
-        <div class="hintbox-title"><i class="fa-solid fa-circle-info"></i> Quyền</div>
-        <div class="hintbox-sub">
-          Khách chỉ xem. Admin mới thêm/sửa/xoá và tạo phiếu nhập/xuất.
+        <div class="sidebar-title">
+          <i class="fa-solid fa-list"></i> DANH MỤC SẢN PHẨM
         </div>
+      </div>
+
+      <ul class="cat-list" id="catList"></ul>
+
+      <div class="sidebar-block">
+        <div class="sidebar-block-title">THƯƠNG HIỆU</div>
+        <div class="brand-tags" id="brandTags"></div>
       </div>
     </aside>
 
+    <!-- CONTENT -->
     <section class="content">
-      <div class="content-head">
-        <div>
-          <h1>Danh sách sản phẩm</h1>
-          <div class="sub">
-            <span id="resultCount">0</span> kết quả •
-            <span class="muted">Click sản phẩm để xem nhanh</span>
-          </div>
-        </div>
+      <div class="breadcrumb">
+        <span>Trang chủ</span> <span class="crumb-sep">›</span>
+        <span id="crumbCategory" class="crumb-active">Lọc nhớt</span>
+      </div>
 
-        <div class="content-actions">
-          <button class="btn primary" id="btnAddProduct" type="button">
-            <i class="fa-solid fa-plus"></i> Thêm sản phẩm
-          </button>
+      <div class="content-head">
+        <h1 id="pageTitle">Lọc nhớt</h1>
+
+        <div class="sort">
+          <span>Sắp xếp:</span>
+          <select id="sortSelect" class="sort-select">
+            <option value="newest">Thứ tự (mới nhất)</option>
+            <option value="az">Tên A → Z</option>
+            <option value="za">Tên Z → A</option>
+            <option value="stockDesc">Tồn giảm dần</option>
+            <option value="stockAsc">Tồn tăng dần</option>
+          </select>
         </div>
       </div>
 
       <div class="grid" id="productGrid"></div>
 
       <div class="empty" id="emptyState" hidden>
-        <div class="empty-ico"><i class="fa-regular fa-face-frown"></i></div>
-        <div class="empty-title">Không có sản phẩm phù hợp</div>
-        <div class="empty-sub">Thử đổi danh mục / thương hiệu / từ khoá.</div>
+        Không có sản phẩm phù hợp.
       </div>
     </section>
   </main>
 
-  <!-- Toast -->
-  <div class="toast" id="toast" hidden>
-    <i class="fa-solid fa-circle-check"></i>
-    <span id="toastText">OK</span>
-  </div>
+  <!-- FLOAT HOTLINE -->
+  <a class="hotline" href="tel:0348074177">
+    <i class="fa-solid fa-phone"></i> 0348074177
+  </a>
 
-  <!-- MODAL: Login -->
-  <div class="modal" id="loginModal" aria-hidden="true">
+  <!-- MODAL: ADMIN -->
+  <div class="modal" id="adminModal" aria-hidden="true">
     <div class="backdrop" data-close="1"></div>
     <div class="modal-card">
       <div class="modal-head">
-        <div class="mh-title"><i class="fa-solid fa-user-shield"></i> Đăng nhập Admin</div>
+        <div class="modal-title"><i class="fa-solid fa-user-shield"></i> Admin Panel</div>
         <button class="icon-btn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
+
       <div class="modal-body">
         <div class="note">
-          <b>Lưu ý:</b> GitHub Pages là web tĩnh → “admin” chỉ là chế độ giao diện, không phải bảo mật thật.
+          Web chạy GitHub Pages (tĩnh) nên “admin” là chế độ. Đổi mật khẩu trong <code>app.js</code> (ADMIN_PASSWORD).
         </div>
 
-        <div class="form">
-          <label>Mật khẩu admin</label>
-          <div class="field">
-            <i class="fa-solid fa-key"></i>
-            <input id="adminPass" class="control" type="password" placeholder="Nhập mật khẩu..." />
+        <div class="row">
+          <div class="field full">
+            <label>Mật khẩu admin</label>
+            <div class="input-wrap">
+              <i class="fa-solid fa-key"></i>
+              <input id="adminPass" class="input" type="password" placeholder="Nhập mật khẩu..." />
+            </div>
           </div>
+        </div>
 
-          <div class="row">
-            <button id="adminLoginBtn" class="btn primary" type="button">
-              <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
-            </button>
-            <button id="adminLogoutBtn" class="btn danger" type="button" hidden>
-              <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
-            </button>
-          </div>
-          <div class="muted">Đổi pass trong <code>app.js</code> → <code>ADMIN_PASSWORD</code></div>
+        <div class="row">
+          <button id="adminLoginBtn" class="btn primary" type="button">
+            <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+          </button>
+          <button id="adminLogoutBtn" class="btn danger" type="button" hidden>
+            <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+          </button>
+
+          <button id="btnOpenInventory" class="btn" type="button">
+            <i class="fa-solid fa-warehouse"></i> Kho (Nhập/Xuất)
+          </button>
+
+          <button id="btnOpenProductModal" class="btn primary" type="button">
+            <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: Product Add/Edit -->
+  <!-- MODAL: ADD/EDIT PRODUCT -->
   <div class="modal" id="productModal" aria-hidden="true">
     <div class="backdrop" data-close="1"></div>
     <div class="modal-card wide">
       <div class="modal-head">
-        <div class="mh-title"><i class="fa-solid fa-box"></i> <span id="pmTitle">Thêm sản phẩm</span></div>
+        <div class="modal-title"><i class="fa-solid fa-box"></i> <span id="pmTitle">Thêm sản phẩm</span></div>
         <button class="icon-btn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
@@ -259,67 +205,63 @@
             <input id="pId" type="hidden"/>
 
             <div class="form-grid">
-              <div class="form">
+              <div class="field">
                 <label>Tên sản phẩm *</label>
-                <input id="pName" class="control" placeholder="VD: Lọc nhớt Sakura EO-..." />
+                <input id="pName" class="input" placeholder="VD: Lọc nhớt giấy Sakura EO-..." />
               </div>
 
-              <div class="form">
-                <label>SKU / Mã</label>
-                <input id="pSku" class="control" placeholder="VD: EO-88990" />
+              <div class="field">
+                <label>Mã (SKU)</label>
+                <input id="pSku" class="input" placeholder="VD: EO-88990" />
               </div>
 
-              <div class="form">
+              <div class="field">
                 <label>Danh mục *</label>
-                <select id="pCategory" class="control"></select>
+                <select id="pCategory" class="input select"></select>
               </div>
 
-              <div class="form">
+              <div class="field">
                 <label>Thương hiệu</label>
-                <input id="pBrand" class="control" placeholder="VD: Sakura" />
+                <input id="pBrand" class="input" placeholder="VD: Sakura" />
               </div>
 
-              <div class="form full">
+              <div class="field full">
                 <label>Mô tả ngắn</label>
-                <input id="pDesc" class="control" placeholder="VD: Lọc giấy bền, chính hãng..." />
+                <input id="pDesc" class="input" placeholder="VD: Hàng chính hãng, bền..." />
               </div>
 
-              <div class="form full">
-                <label>Ảnh sản phẩm</label>
-                <div class="upload">
-                  <input id="pImageFile" type="file" accept="image/*" capture="environment"/>
-                  <button class="btn" type="button" id="btnPickImage">
-                    <i class="fa-regular fa-image"></i> Chọn ảnh từ máy/điện thoại
+              <div class="field full">
+                <label>Ảnh sản phẩm (upload từ máy/điện thoại + preview)</label>
+                <div class="upload-row">
+                  <input id="pImageFile" type="file" accept="image/*" capture="environment" hidden />
+                  <button id="btnPickImage" class="btn" type="button">
+                    <i class="fa-regular fa-image"></i> Chọn ảnh
                   </button>
-                  <button class="btn ghost" type="button" id="btnUseUrl">
+                  <button id="btnUseUrl" class="btn" type="button">
                     <i class="fa-solid fa-link"></i> Dùng URL
                   </button>
                 </div>
 
                 <div id="urlBox" class="urlbox" hidden>
-                  <div class="field">
+                  <div class="input-wrap">
                     <i class="fa-solid fa-link"></i>
-                    <input id="pImageUrl" class="control" placeholder="Dán URL ảnh (https://...)" />
+                    <input id="pImageUrl" class="input" placeholder="Dán URL ảnh https://..." />
                   </div>
                 </div>
 
                 <div class="preview">
-                  <div class="preview-title">
-                    <i class="fa-solid fa-eye"></i> Preview ảnh (trước khi lưu)
-                  </div>
+                  <div class="preview-title"><i class="fa-solid fa-eye"></i> Preview trước khi lưu</div>
                   <div class="preview-box">
                     <img id="pImagePreview" alt="preview" />
                   </div>
-                  <div class="muted small">
-                    Tip: ảnh quá lớn sẽ làm đầy bộ nhớ trình duyệt. Nên dùng ảnh ~300-600px.
-                  </div>
+                  <div class="hint">Tip: ảnh nên ~300–800px để đỡ nặng bộ nhớ.</div>
                 </div>
               </div>
             </div>
 
             <div class="row">
               <button id="saveProductBtn" class="btn primary" type="button">
-                <i class="fa-solid fa-floppy-disk"></i> Lưu sản phẩm
+                <i class="fa-solid fa-floppy-disk"></i> Lưu
               </button>
               <button id="deleteProductBtn" class="btn danger" type="button" hidden>
                 <i class="fa-solid fa-trash"></i> Xoá
@@ -332,20 +274,18 @@
 
           <div class="quickview">
             <div class="qv-title"><i class="fa-solid fa-bolt"></i> Xem nhanh</div>
-            <div class="qv-card" id="qvCard">
+            <div class="qv-card">
               <div class="qv-img"><img id="qvImg" alt="qv"/></div>
               <div class="qv-body">
                 <div class="qv-name" id="qvName">Tên sản phẩm</div>
                 <div class="qv-meta" id="qvMeta">Danh mục • Thương hiệu • SKU</div>
                 <div class="qv-desc" id="qvDesc">Mô tả ngắn</div>
-                <div class="qv-stock">
-                  <i class="fa-solid fa-warehouse"></i> Tồn: <b id="qvStock">0</b>
-                </div>
+                <div class="qv-stock"><i class="fa-solid fa-warehouse"></i> Tồn: <b id="qvStock">0</b></div>
               </div>
             </div>
 
-            <div class="note">
-              Bạn có thể mở <b>Kho (Nhập/Xuất)</b> để tăng/giảm tồn theo phiếu.
+            <div class="note mt">
+              Quản lý tồn kho ở cửa sổ <b>Kho (Nhập/Xuất)</b>.
             </div>
           </div>
         </div>
@@ -353,43 +293,44 @@
     </div>
   </div>
 
-  <!-- MODAL: Inventory (Nhap/Xuat) -->
+  <!-- MODAL: INVENTORY -->
   <div class="modal" id="inventoryModal" aria-hidden="true">
     <div class="backdrop" data-close="1"></div>
     <div class="modal-card wide">
       <div class="modal-head">
-        <div class="mh-title"><i class="fa-solid fa-warehouse"></i> Kho: Nhập / Xuất</div>
+        <div class="modal-title"><i class="fa-solid fa-warehouse"></i> Kho: Nhập / Xuất</div>
         <button class="icon-btn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
+
       <div class="modal-body">
         <div class="tabs">
-          <button class="tab active" data-tab="create"><i class="fa-solid fa-pen"></i> Tạo phiếu</button>
-          <button class="tab" data-tab="history"><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử</button>
+          <button class="tab active" data-tab="create" type="button">Tạo phiếu</button>
+          <button class="tab" data-tab="history" type="button">Lịch sử</button>
         </div>
 
         <div class="tabpane active" id="tab-create">
           <div class="form-grid">
-            <div class="form">
+            <div class="field">
               <label>Loại</label>
-              <select id="mType" class="control">
+              <select id="mType" class="input select">
                 <option value="IN">Nhập kho</option>
                 <option value="OUT">Xuất kho</option>
               </select>
             </div>
 
-            <div class="form">
+            <div class="field">
               <label>Sản phẩm</label>
-              <select id="mProduct" class="control"></select>
+              <select id="mProduct" class="input select"></select>
             </div>
 
-            <div class="form">
+            <div class="field">
               <label>Số lượng *</label>
-              <input id="mQty" class="control" type="number" min="1" step="1" placeholder="VD: 10" />
+              <input id="mQty" class="input" type="number" min="1" step="1" placeholder="VD: 10" />
             </div>
 
-            <div class="form full">
+            <div class="field full">
               <label>Ghi chú</label>
-              <input id="mNote" class="control" placeholder="VD: Nhập hàng đợt 1 / Xuất cho khách A..." />
+              <input id="mNote" class="input" placeholder="VD: Nhập hàng đợt 1..." />
             </div>
           </div>
 
@@ -397,27 +338,25 @@
             <button id="mSave" class="btn primary" type="button">
               <i class="fa-solid fa-floppy-disk"></i> Lưu phiếu
             </button>
-            <div class="muted">Tồn được tính tự động = tổng nhập - tổng xuất.</div>
           </div>
 
-          <div class="line"></div>
-
-          <div class="inventory-table-wrap">
-            <div class="inv-head">
-              <div class="inv-title"><i class="fa-solid fa-table"></i> Bảng tồn theo sản phẩm</div>
-              <div class="field small">
-                <i class="fa-solid fa-filter"></i>
-                <input id="invFilter" class="control" placeholder="Lọc nhanh (tên / sku)..." />
-              </div>
+          <div class="table-head">
+            <div><b>Bảng tồn</b></div>
+            <div class="input-wrap small">
+              <i class="fa-solid fa-filter"></i>
+              <input id="invFilter" class="input" placeholder="Lọc nhanh..." />
             </div>
+          </div>
+
+          <div class="table-wrap">
             <table class="table">
               <thead>
-                <tr>
-                  <th>Sản phẩm</th>
-                  <th>SKU</th>
-                  <th>Danh mục</th>
-                  <th>Tồn</th>
-                </tr>
+              <tr>
+                <th>Sản phẩm</th>
+                <th>SKU</th>
+                <th>Danh mục</th>
+                <th>Tồn</th>
+              </tr>
               </thead>
               <tbody id="invTableBody"></tbody>
             </table>
@@ -425,65 +364,26 @@
         </div>
 
         <div class="tabpane" id="tab-history">
-          <div class="inv-head">
-            <div class="inv-title"><i class="fa-solid fa-receipt"></i> Lịch sử phiếu</div>
-            <div class="field small">
+          <div class="table-head">
+            <div><b>Lịch sử phiếu</b></div>
+            <div class="input-wrap small">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input id="hisFilter" class="control" placeholder="Lọc theo tên / sku / note..." />
+              <input id="hisFilter" class="input" placeholder="Lọc theo tên / sku / note..." />
             </div>
           </div>
 
-          <div class="history" id="historyList"></div>
+          <div id="historyList" class="history"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: Import / Export -->
-  <div class="modal" id="ieModal" aria-hidden="true">
-    <div class="backdrop" data-close="1"></div>
-    <div class="modal-card">
-      <div class="modal-head">
-        <div class="mh-title"><i class="fa-solid fa-file-arrow-up"></i> Nhập / Xuất dữ liệu</div>
-        <button class="icon-btn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="modal-body">
-        <div class="note">
-          Xuất ra file <b>JSON</b> để backup, hoặc nhập lại trên máy khác.
-        </div>
-
-        <div class="row">
-          <button class="btn primary" id="btnExport" type="button">
-            <i class="fa-solid fa-download"></i> Xuất JSON (Sản phẩm + Phiếu)
-          </button>
-          <label class="btn" for="importFile">
-            <i class="fa-solid fa-upload"></i> Nhập JSON
-          </label>
-          <input id="importFile" type="file" accept="application/json" hidden />
-        </div>
-
-        <div class="line"></div>
-
-        <div class="note warn">
-          <b>Cảnh báo:</b> Nhập JSON sẽ ghi đè dữ liệu hiện có trong trình duyệt.
-        </div>
-
-        <div class="row">
-          <button class="btn danger" id="btnWipe" type="button">
-            <i class="fa-solid fa-bomb"></i> Xoá toàn bộ dữ liệu
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: Product Quick View -->
+  <!-- MODAL: QUICK VIEW -->
   <div class="modal" id="viewModal" aria-hidden="true">
     <div class="backdrop" data-close="1"></div>
     <div class="modal-card wide">
       <div class="modal-head">
-        <div class="mh-title"><i class="fa-regular fa-eye"></i> Chi tiết nhanh</div>
+        <div class="modal-title"><i class="fa-regular fa-eye"></i> Chi tiết nhanh</div>
         <button class="icon-btn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
       <div class="modal-body">
@@ -494,21 +394,32 @@
             <div class="view-meta" id="vMeta">meta</div>
             <div class="view-desc" id="vDesc">desc</div>
             <div class="view-stock"><i class="fa-solid fa-warehouse"></i> Tồn: <b id="vStock">0</b></div>
+
             <div class="row">
-              <button class="btn primary" id="btnEditFromView" type="button">
+              <button id="btnEditFromView" class="btn primary" type="button">
                 <i class="fa-solid fa-pen"></i> Sửa (Admin)
               </button>
-              <button class="btn" id="btnGoInventoryFromView" type="button">
-                <i class="fa-solid fa-warehouse"></i> Nhập/Xuất
+              <button id="btnGoInventoryFromView" class="btn" type="button">
+                <i class="fa-solid fa-warehouse"></i> Kho
+              </button>
+              <button id="btnAddToCart" class="btn" type="button">
+                <i class="fa-solid fa-cart-plus"></i> Thêm giỏ (demo)
               </button>
             </div>
-            <div class="muted small">Khách chỉ xem. Admin mới sửa và tạo phiếu.</div>
+
+            <div class="hint">Khách chỉ xem. Admin mới sửa / nhập xuất.</div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <script defer src="app.js?v=1"></script>
+  <!-- TOAST -->
+  <div class="toast" id="toast" hidden>
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toastText">OK</span>
+  </div>
+
+  <script defer src="app.js?v=2"></script>
 </body>
 </html>
