@@ -1,16 +1,14 @@
-/* =========
+/* =========================
    CONFIG
-   ========= */
-const STORAGE_KEY = "pas_sakura_products_v1";
-const ADMIN_FLAG_KEY = "pas_admin_logged_in_v1";
+========================= */
+const STORAGE_KEY = "pas_products_v3";
+const ADMIN_FLAG_KEY = "pas_admin_v3";
+const ADMIN_PASSWORD = "123456"; // đổi pass tại đây
 
-// Đổi mật khẩu ở đây (demo). Muốn bảo mật thật -> cần backend.
-const ADMIN_PASSWORD = "123456";
-
-/* =========
-   DEMO DATA
-   ========= */
-const DEFAULT_CATEGORIES = [
+/* =========================
+   DATA
+========================= */
+const CATEGORIES = [
   "Các loại lọc",
   "Két nước",
   "Két gió",
@@ -24,85 +22,50 @@ const DEFAULT_CATEGORIES = [
   "Quạt",
   "Kèn",
   "Phụ gia",
-  "Lọc nhớt"
+  "Lọc nhớt",
 ];
 
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=utf-8," +
   encodeURIComponent(`
   <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600">
-    <rect width="100%" height="100%" fill="#f3f4f6"/>
-    <g fill="#9ca3af" font-family="Arial" font-size="22" font-weight="700">
-      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">No Image</text>
-    </g>
+    <defs>
+      <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f8fafc"/><stop offset="1" stop-color="#ffffff"/>
+      </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#g)"/>
+    <circle cx="300" cy="220" r="90" fill="#fee2e2"/>
+    <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle"
+      font-family="Arial" font-size="22" font-weight="700" fill="#64748b">No Image</text>
   </svg>`);
 
-const seedProducts = () => ([
-  {
-    id: cryptoRandomId(),
-    name: "Lọc nhớt giấy Sakura EO-88990",
-    sku: "EO-88990",
-    category: "Lọc nhớt",
-    brand: "Sakura",
-    price: 120000,
-    image: FALLBACK_IMG,
-    desc: "Lọc nhớt giấy, độ bền cao."
-  },
-  {
-    id: cryptoRandomId(),
-    name: "Lọc nhớt giấy Sakura EO-68020",
-    sku: "EO-68020",
-    category: "Lọc nhớt",
-    brand: "Sakura",
-    price: 115000,
-    image: FALLBACK_IMG,
-    desc: "Tương thích nhiều dòng xe."
-  },
-  {
-    id: cryptoRandomId(),
-    name: "Lọc nhớt giấy Sakura EO-65090",
-    sku: "EO-65090",
-    category: "Lọc nhớt",
-    brand: "Sakura",
-    price: 98000,
-    image: FALLBACK_IMG,
-    desc: "Giữ sạch dầu, giảm mài mòn."
-  },
-  {
-    id: cryptoRandomId(),
-    name: "Lọc gió Sakura A-28100",
-    sku: "A-28100",
-    category: "Két gió",
-    brand: "Sakura",
-    price: 165000,
-    image: FALLBACK_IMG,
-    desc: "Tăng hiệu quả nạp gió."
-  },
-  {
-    id: cryptoRandomId(),
-    name: "Nước giải nhiệt Sakura Coolant 1L",
-    sku: "COOL-1L",
-    category: "Nước giải nhiệt",
-    brand: "Sakura",
-    price: 75000,
-    image: FALLBACK_IMG,
-    desc: "Bảo vệ két nước, chống sôi."
-  },
-  {
-    id: cryptoRandomId(),
-    name: "Má phanh Sakura BP-110",
-    sku: "BP-110",
-    category: "Má phanh",
-    brand: "Sakura",
-    price: 320000,
-    image: FALLBACK_IMG,
-    desc: "Phanh êm, ít bụi."
-  },
-]);
+function seedProducts() {
+  const now = Date.now();
+  return [
+    mk("Lọc nhớt giấy Sakura EO-88990", "EO-88990", "Lọc nhớt", "Sakura", 120000, "", "Lọc giấy, độ bền cao.", now-10000),
+    mk("Lọc nhớt giấy Sakura EO-68020", "EO-68020", "Lọc nhớt", "Sakura", 115000, "", "Giữ sạch dầu, giảm mài mòn.", now-9000),
+    mk("Lọc nhớt giấy Sakura EO-65090", "EO-65090", "Lọc nhớt", "Sakura", 98000, "", "Tương thích nhiều dòng xe.", now-8000),
+    mk("Lọc gió Sakura A-28100", "A-28100", "Két gió", "Sakura", 165000, "", "Tăng hiệu quả nạp gió.", now-7000),
+    mk("Nước giải nhiệt Coolant 1L", "COOL-1L", "Nước giải nhiệt", "Sakura", 75000, "", "Chống sôi, bảo vệ két.", now-6000),
+    mk("Má phanh Sakura BP-110", "BP-110", "Má phanh", "Sakura", 320000, "", "Phanh êm, ít bụi.", now-5000),
+  ];
+}
 
-/* =========
+function mk(name, sku, category, brand, price, image, desc, createdAt){
+  return {
+    id: rid(),
+    name, sku, category, brand,
+    price: Number(price || 0),
+    image: image || FALLBACK_IMG,
+    desc: desc || "",
+    createdAt: createdAt || Date.now()
+  };
+}
+
+/* =========================
    STATE
-   ========= */
+========================= */
 const state = {
   products: [],
   activeCategory: "Lọc nhớt",
@@ -112,86 +75,77 @@ const state = {
   isAdmin: false
 };
 
-/* =========
+/* =========================
    DOM
-   ========= */
-const el = (id) => document.getElementById(id);
+========================= */
+const $ = (id) => document.getElementById(id);
 
-const catList = el("catList");
-const brandTags = el("brandTags");
-const productGrid = el("productGrid");
-const emptyState = el("emptyState");
-const resultCount = el("resultCount");
+const catList = $("catList");
+const brandTags = $("brandTags");
+const productGrid = $("productGrid");
+const emptyState = $("emptyState");
+const resultCount = $("resultCount");
 
-const pageTitle = el("pageTitle");
-const crumbCategory = el("crumbCategory");
+const pageTitle = $("pageTitle");
+const crumbCategory = $("crumbCategory");
 
-const searchInput = el("searchInput");
-const searchBtn = el("searchBtn");
-const categorySelect = el("categorySelect");
-const sortSelect = el("sortSelect");
+const searchInput = $("searchInput");
+const searchBtn = $("searchBtn");
+const categorySelect = $("categorySelect");
+const sortSelect = $("sortSelect");
 
-const btnAdmin = el("btnAdmin");
-const adminModal = el("adminModal");
-const closeAdmin = el("closeAdmin");
-const btnToggleSidebar = el("btnToggleSidebar");
-const sidebar = el("sidebar");
+const btnAdmin = $("btnAdmin");
+const adminModal = $("adminModal");
+const closeAdmin = $("closeAdmin");
+const btnToggleSidebar = $("btnToggleSidebar");
+const sidebar = $("sidebar");
 
-const adminPass = el("adminPass");
-const adminLoginBtn = el("adminLoginBtn");
-const adminLogoutBtn = el("adminLogoutBtn");
-const adminForm = el("adminForm");
-const adminStatusText = el("adminStatusText");
+const adminPass = $("adminPass");
+const adminLoginBtn = $("adminLoginBtn");
+const adminLogoutBtn = $("adminLogoutBtn");
+const adminForm = $("adminForm");
+const adminStatusText = $("adminStatusText");
 
-const pId = el("pId");
-const pName = el("pName");
-const pSku = el("pSku");
-const pCategory = el("pCategory");
-const pBrand = el("pBrand");
-const pPrice = el("pPrice");
-const pImage = el("pImage");
-const pDesc = el("pDesc");
-const saveProductBtn = el("saveProductBtn");
-const resetFormBtn = el("resetFormBtn");
-const adminTableBody = el("adminTableBody");
+const pId = $("pId");
+const pName = $("pName");
+const pSku = $("pSku");
+const pCategory = $("pCategory");
+const pBrand = $("pBrand");
+const pPrice = $("pPrice");
+const pImage = $("pImage");
+const pDesc = $("pDesc");
+const saveProductBtn = $("saveProductBtn");
+const resetFormBtn = $("resetFormBtn");
+const adminTableBody = $("adminTableBody");
 
-/* =========
+/* =========================
    INIT
-   ========= */
+========================= */
 init();
 
-function init() {
+function init(){
   state.products = loadProducts();
   state.isAdmin = loadAdminFlag();
 
-  // fill category select
   renderCategoryOptions();
-
-  // sidebar categories
   renderCategories();
 
-  // sort selection
   sortSelect.value = state.sort;
-
-  // default page title
   setActiveCategory(state.activeCategory);
 
-  // events
   wireEvents();
-
-  // initial render
-  render();
   syncAdminUI();
+  render();
 }
 
-function wireEvents() {
+function wireEvents(){
   searchBtn.addEventListener("click", () => {
     state.query = (searchInput.value || "").trim();
     render();
   });
 
   searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter"){
       state.query = (searchInput.value || "").trim();
       render();
     }
@@ -213,22 +167,20 @@ function wireEvents() {
     sidebar.classList.toggle("show");
   });
 
-  // Admin modal open/close
   btnAdmin.addEventListener("click", () => openAdminModal());
   closeAdmin.addEventListener("click", () => closeAdminModal());
   adminModal.addEventListener("click", (e) => {
-    const t = e.target;
-    if (t && t.dataset && t.dataset.close) closeAdminModal();
+    if (e.target && e.target.dataset && e.target.dataset.close) closeAdminModal();
   });
 
-  // Admin auth
   adminLoginBtn.addEventListener("click", () => {
     const pass = (adminPass.value || "").trim();
-    if (pass === ADMIN_PASSWORD) {
+    if (pass === ADMIN_PASSWORD){
       state.isAdmin = true;
       saveAdminFlag(true);
       adminPass.value = "";
       syncAdminUI();
+      alert("Đăng nhập admin thành công!");
     } else {
       alert("Sai mật khẩu admin!");
     }
@@ -240,91 +192,71 @@ function wireEvents() {
     syncAdminUI();
   });
 
-  // Admin form actions
   saveProductBtn.addEventListener("click", () => onSaveProduct());
   resetFormBtn.addEventListener("click", () => resetAdminForm());
 }
 
-function openAdminModal() {
-  adminModal.classList.add("open");
-  adminModal.setAttribute("aria-hidden", "false");
-  // render admin table each time opened
-  renderAdminTable();
-}
-
-function closeAdminModal() {
-  adminModal.classList.remove("open");
-  adminModal.setAttribute("aria-hidden", "true");
-}
-
-/* =========
+/* =========================
    RENDER
-   ========= */
-function render() {
-  const view = getFilteredSortedProducts();
-  renderBrands(view.baseForBrands);
-  renderGrid(view.items);
-  resultCount.textContent = String(view.items.length);
-
-  emptyState.hidden = view.items.length !== 0;
+========================= */
+function render(){
+  const { items, baseForBrands } = getFilteredSortedProducts();
+  renderBrands(baseForBrands);
+  renderGrid(items);
+  resultCount.textContent = String(items.length);
+  emptyState.hidden = items.length !== 0;
 }
 
-function renderCategoryOptions() {
-  // Top select
+function renderCategoryOptions(){
   categorySelect.innerHTML = `<option value="all">Chọn danh mục</option>` +
-    DEFAULT_CATEGORIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+    CATEGORIES.map(c => `<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
 
-  // Admin select
-  pCategory.innerHTML = DEFAULT_CATEGORIES.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  pCategory.innerHTML = CATEGORIES.map(c => `<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
 }
 
-function renderCategories() {
-  catList.innerHTML = DEFAULT_CATEGORIES.map(cat => {
-    const active = cat === state.activeCategory ? "active" : "";
-    return `
-      <li class="cat-item ${active}" data-cat="${escapeAttr(cat)}">
-        <span>${escapeHtml(cat)}</span>
-        <span class="cat-arrow">›</span>
-      </li>
-    `;
-  }).join("");
+function renderCategories(){
+  catList.innerHTML = CATEGORIES.map(cat => `
+    <li class="cat-item ${cat === state.activeCategory ? "active" : ""}" data-cat="${escAttr(cat)}">
+      <span>${esc(cat)}</span>
+      <span class="cat-arrow">›</span>
+    </li>
+  `).join("");
 
   catList.querySelectorAll(".cat-item").forEach(li => {
     li.addEventListener("click", () => {
-      const cat = li.dataset.cat;
-      setActiveCategory(cat);
+      setActiveCategory(li.dataset.cat);
       sidebar.classList.remove("show");
       render();
     });
   });
 }
 
-function setActiveCategory(cat) {
+function setActiveCategory(cat){
   state.activeCategory = cat;
-  state.activeBrand = null; // reset brand when changing category
+  state.activeBrand = null;
+
   pageTitle.textContent = cat;
   crumbCategory.textContent = cat;
+  categorySelect.value = cat;
 
-  // update active class in sidebar
   catList.querySelectorAll(".cat-item").forEach(li => {
     li.classList.toggle("active", li.dataset.cat === cat);
   });
-
-  // update top select
-  categorySelect.value = cat;
 }
 
-function renderBrands(baseItems) {
-  const brands = [...new Set(baseItems.map(p => (p.brand || "").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"vi"));
-  if (brands.length === 0) {
+function renderBrands(baseItems){
+  const brands = [...new Set(baseItems.map(p => (p.brand||"").trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,"vi"));
+
+  if (brands.length === 0){
     brandTags.innerHTML = `<span class="muted">Không có thương hiệu</span>`;
     return;
   }
+
   const allTag = `<button class="tag ${state.activeBrand ? "" : "active"}" type="button" data-brand="">Tất cả</button>`;
-  const tags = brands.map(b => {
-    const active = (state.activeBrand === b) ? "active" : "";
-    return `<button class="tag ${active}" type="button" data-brand="${escapeAttr(b)}">${escapeHtml(b)}</button>`;
-  }).join("");
+  const tags = brands.map(b => `
+    <button class="tag ${state.activeBrand === b ? "active" : ""}" type="button" data-brand="${escAttr(b)}">${esc(b)}</button>
+  `).join("");
 
   brandTags.innerHTML = allTag + tags;
 
@@ -337,27 +269,42 @@ function renderBrands(baseItems) {
   });
 }
 
-function renderGrid(items) {
+function renderGrid(items){
   productGrid.innerHTML = items.map(p => {
+    const img = p.image || FALLBACK_IMG;
     const priceText = p.price ? formatVND(p.price) : "Liên hệ";
-    const badge = p.sku ? `<span class="badge">${escapeHtml(p.sku)}</span>` : `<span class="badge">Hot</span>`;
-    const img = p.image ? p.image : FALLBACK_IMG;
 
     return `
       <article class="card">
         <div class="card-img">
-          <img src="${escapeAttr(img)}" alt="${escapeAttr(p.name)}" onerror="this.src='${escapeAttr(FALLBACK_IMG)}'"/>
-        </div>
-        <div class="card-body">
-          <div class="card-title">${escapeHtml(p.name)}</div>
-          <div class="card-sub">${escapeHtml(p.category || "")} • ${escapeHtml(p.brand || "—")}</div>
-          <div class="price-row">
-            <div class="price">${priceText}</div>
-            ${badge}
+          <div class="corner-badge">
+            <i class="fa-solid fa-tag"></i>
+            <span>${esc(p.sku || "HOT")}</span>
           </div>
-          <div class="card-sub">${escapeHtml(p.desc || "")}</div>
+          <img src="${escAttr(img)}" alt="${escAttr(p.name)}" onerror="this.src='${escAttr(FALLBACK_IMG)}'"/>
+        </div>
+
+        <div class="card-body">
+          <div class="card-title">${esc(p.name)}</div>
+
+          <div class="card-sub">
+            <span class="chip"><i class="fa-solid fa-layer-group"></i> ${esc(p.category || "")}</span>
+            <span class="chip"><i class="fa-solid fa-certificate"></i> ${esc(p.brand || "—")}</span>
+          </div>
+
+          <div class="price-row">
+            <div class="price"><i class="fa-solid fa-money-bill-wave"></i> ${priceText}</div>
+          </div>
+
+          <div class="card-sub">${esc(p.desc || "")}</div>
+
           <div class="contact">
-            <button class="btn" type="button" onclick="alert('Gọi hotline: 0779 030 356')">Liên hệ</button>
+            <button class="btn" type="button" onclick="alert('Hotline: 0779 030 356')">
+              <i class="fa-solid fa-phone"></i> Liên hệ
+            </button>
+            <button class="btn primary" type="button" onclick="alert('Chức năng giỏ hàng demo')">
+              <i class="fa-solid fa-cart-plus"></i> Thêm
+            </button>
           </div>
         </div>
       </article>
@@ -365,99 +312,96 @@ function renderGrid(items) {
   }).join("");
 }
 
-/* =========
+/* =========================
    FILTER/SORT
-   ========= */
-function getFilteredSortedProducts() {
+========================= */
+function getFilteredSortedProducts(){
   const inCategory = state.products.filter(p => p.category === state.activeCategory);
-
-  // baseForBrands: list within category and (query?) -> like typical sites you can still show brands based on category
   const baseForBrands = inCategory;
 
   let items = [...inCategory];
 
-  // brand filter
-  if (state.activeBrand) {
-    items = items.filter(p => (p.brand || "").trim() === state.activeBrand);
+  if (state.activeBrand){
+    items = items.filter(p => (p.brand||"").trim() === state.activeBrand);
   }
 
-  // query filter (name or sku)
   const q = (state.query || "").toLowerCase();
-  if (q) {
+  if (q){
     items = items.filter(p =>
-      (p.name || "").toLowerCase().includes(q) ||
-      (p.sku || "").toLowerCase().includes(q)
+      (p.name||"").toLowerCase().includes(q) ||
+      (p.sku||"").toLowerCase().includes(q)
     );
   }
 
-  // sort
   items.sort((a,b) => {
-    switch (state.sort) {
-      case "az":
-        return (a.name || "").localeCompare((b.name || ""), "vi");
-      case "za":
-        return (b.name || "").localeCompare((a.name || ""), "vi");
-      case "priceAsc":
-        return (num(a.price) - num(b.price));
-      case "priceDesc":
-        return (num(b.price) - num(a.price));
+    switch(state.sort){
+      case "az": return (a.name||"").localeCompare((b.name||""),"vi");
+      case "za": return (b.name||"").localeCompare((a.name||""),"vi");
+      case "priceAsc": return (Number(a.price||0) - Number(b.price||0));
+      case "priceDesc": return (Number(b.price||0) - Number(a.price||0));
       case "newest":
-      default:
-        return (num(b.createdAt) - num(a.createdAt));
+      default: return (Number(b.createdAt||0) - Number(a.createdAt||0));
     }
   });
 
   return { items, baseForBrands };
 }
 
-/* =========
-   ADMIN: CRUD
-   ========= */
-function syncAdminUI() {
-  if (state.isAdmin) {
-    btnAdmin.textContent = "Admin Panel";
+/* =========================
+   ADMIN
+========================= */
+function openAdminModal(){
+  adminModal.classList.add("open");
+  adminModal.setAttribute("aria-hidden","false");
+  renderAdminTable();
+}
+
+function closeAdminModal(){
+  adminModal.classList.remove("open");
+  adminModal.setAttribute("aria-hidden","true");
+}
+
+function syncAdminUI(){
+  if (state.isAdmin){
     adminStatusText.textContent = "Bạn đang đăng nhập Admin";
     adminForm.hidden = false;
     adminLogoutBtn.hidden = false;
     adminLoginBtn.hidden = true;
     adminPass.hidden = true;
+    btnAdmin.querySelector("span").textContent = "Admin Panel";
   } else {
-    btnAdmin.textContent = "Đăng nhập Admin";
     adminStatusText.textContent = "Chỉ admin mới thêm/sửa/xoá sản phẩm";
     adminForm.hidden = true;
     adminLogoutBtn.hidden = true;
     adminLoginBtn.hidden = false;
     adminPass.hidden = false;
+    btnAdmin.querySelector("span").textContent = "Admin";
   }
 
   renderAdminTable();
 }
 
-function onSaveProduct() {
-  if (!state.isAdmin) {
-    alert("Bạn không có quyền (chưa đăng nhập admin).");
-    return;
-  }
+function onSaveProduct(){
+  if (!state.isAdmin) return alert("Chưa đăng nhập admin.");
 
   const product = {
-    id: pId.value ? pId.value : cryptoRandomId(),
+    id: pId.value ? pId.value : rid(),
     name: (pName.value || "").trim(),
     sku: (pSku.value || "").trim(),
     category: pCategory.value,
-    brand: (pBrand.value || "").trim(),
+    brand: (pBrand.value || "").trim() || "Sakura",
     price: pPrice.value ? Number(pPrice.value) : 0,
     image: (pImage.value || "").trim() || FALLBACK_IMG,
     desc: (pDesc.value || "").trim(),
     createdAt: Date.now()
   };
 
-  if (!product.name) return alert("Vui lòng nhập Tên sản phẩm.");
-  if (!product.category) return alert("Vui lòng chọn Danh mục.");
+  if (!product.name) return alert("Nhập tên sản phẩm.");
+  if (!product.category) return alert("Chọn danh mục.");
 
-  const idx = state.products.findIndex(p => p.id === product.id);
-  if (idx >= 0) {
-    // preserve original createdAt for edited item
-    product.createdAt = state.products[idx].createdAt || Date.now();
+  const idx = state.products.findIndex(x => x.id === product.id);
+  if (idx >= 0){
+    product.createdAt = state.products[idx].createdAt || product.createdAt;
     state.products[idx] = product;
   } else {
     state.products.push(product);
@@ -467,25 +411,39 @@ function onSaveProduct() {
   resetAdminForm();
   renderAdminTable();
   render();
-
   alert("Đã lưu sản phẩm!");
 }
 
-function renderAdminTable() {
+function resetAdminForm(){
+  pId.value = "";
+  pName.value = "";
+  pSku.value = "";
+  pCategory.value = state.activeCategory || CATEGORIES[0];
+  pBrand.value = "Sakura";
+  pPrice.value = "";
+  pImage.value = "";
+  pDesc.value = "";
+}
+
+function renderAdminTable(){
   if (!adminTableBody) return;
 
   const rows = [...state.products]
     .sort((a,b)=> (a.category||"").localeCompare((b.category||""),"vi") || (a.name||"").localeCompare((b.name||""),"vi"))
     .map(p => `
       <tr>
-        <td>${escapeHtml(p.name)}</td>
-        <td>${escapeHtml(p.sku || "")}</td>
-        <td>${escapeHtml(p.category || "")}</td>
+        <td>${esc(p.name)}</td>
+        <td>${esc(p.sku || "")}</td>
+        <td>${esc(p.category || "")}</td>
         <td>${p.price ? formatVND(p.price) : "Liên hệ"}</td>
         <td>
           <div class="action-btns">
-            <button class="btn" type="button" data-edit="${escapeAttr(p.id)}">Sửa</button>
-            <button class="btn primary" type="button" data-del="${escapeAttr(p.id)}">Xoá</button>
+            <button class="btn" type="button" data-edit="${escAttr(p.id)}">
+              <i class="fa-solid fa-pen"></i> Sửa
+            </button>
+            <button class="btn danger" type="button" data-del="${escAttr(p.id)}">
+              <i class="fa-solid fa-trash"></i> Xoá
+            </button>
           </div>
         </td>
       </tr>
@@ -493,7 +451,6 @@ function renderAdminTable() {
 
   adminTableBody.innerHTML = rows || `<tr><td colspan="5" class="muted">Chưa có sản phẩm</td></tr>`;
 
-  // bind actions
   adminTableBody.querySelectorAll("[data-edit]").forEach(btn => {
     btn.addEventListener("click", () => {
       const id = btn.dataset.edit;
@@ -518,78 +475,65 @@ function renderAdminTable() {
   });
 }
 
-function fillAdminForm(p) {
+function fillAdminForm(p){
   pId.value = p.id;
   pName.value = p.name || "";
   pSku.value = p.sku || "";
-  pCategory.value = p.category || DEFAULT_CATEGORIES[0];
+  pCategory.value = p.category || CATEGORIES[0];
   pBrand.value = p.brand || "";
   pPrice.value = p.price || 0;
   pImage.value = (p.image && p.image !== FALLBACK_IMG) ? p.image : "";
   pDesc.value = p.desc || "";
 }
 
-function resetAdminForm() {
-  pId.value = "";
-  pName.value = "";
-  pSku.value = "";
-  pCategory.value = state.activeCategory || DEFAULT_CATEGORIES[0];
-  pBrand.value = "Sakura";
-  pPrice.value = "";
-  pImage.value = "";
-  pDesc.value = "";
-}
-
-/* =========
+/* =========================
    STORAGE
-   ========= */
-function loadProducts() {
-  try {
+========================= */
+function loadProducts(){
+  try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
+    if (raw){
       const arr = JSON.parse(raw);
       if (Array.isArray(arr) && arr.length) return arr;
     }
   } catch {}
-  // first run -> seed
-  const seeded = seedProducts().map(p => ({...p, createdAt: Date.now()}));
+  const seeded = seedProducts();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));
   return seeded;
 }
 
-function saveProducts(products) {
+function saveProducts(products){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
 }
 
-function loadAdminFlag() {
+function loadAdminFlag(){
   return localStorage.getItem(ADMIN_FLAG_KEY) === "1";
 }
-function saveAdminFlag(v) {
+function saveAdminFlag(v){
   localStorage.setItem(ADMIN_FLAG_KEY, v ? "1" : "0");
 }
 
-/* =========
+/* =========================
    HELPERS
-   ========= */
-function formatVND(n) {
-  try {
-    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(n);
+========================= */
+function formatVND(n){
+  try{
+    return new Intl.NumberFormat("vi-VN", { style:"currency", currency:"VND" }).format(n);
   } catch {
     return `${n} VND`;
   }
 }
-function num(x){ return Number(x || 0); }
 
-function cryptoRandomId() {
-  if (window.crypto && crypto.getRandomValues) {
-    const arr = new Uint32Array(2);
-    crypto.getRandomValues(arr);
-    return `${arr[0].toString(16)}${arr[1].toString(16)}`;
+function rid(){
+  if (window.crypto && crypto.getRandomValues){
+    const a = new Uint32Array(2);
+    crypto.getRandomValues(a);
+    return a[0].toString(16) + a[1].toString(16);
   }
   return String(Date.now()) + Math.random().toString(16).slice(2);
 }
 
-function escapeHtml(s){
+function esc(s){
   return String(s ?? "")
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
@@ -597,4 +541,4 @@ function escapeHtml(s){
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
 }
-function escapeAttr(s){ return escapeHtml(s).replaceAll("\n"," "); }
+function escAttr(s){ return esc(s).replaceAll("\n"," "); }
