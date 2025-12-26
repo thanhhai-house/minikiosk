@@ -4,54 +4,76 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>PAS Sakura - Danh mục sản phẩm</title>
-  <link rel="stylesheet" href="./styles.css" />
+
+  <!-- ICONS -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- CSS (cache-bust để khỏi bị “không ăn css”) -->
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
-  <!-- Top strip -->
+  <!-- TOP STRIP -->
   <div class="top-strip">
     <div class="container strip-inner">
       <div class="strip-left">
-        <span>Hotline đặt hàng: <b>0779.030.356</b></span>
+        <span><i class="fa-solid fa-phone"></i> Hotline đặt hàng: <b>0779.030.356</b></span>
         <span class="dot">•</span>
-        <span>Hotline góp ý: <b>0358.155.755</b> (Mr Hiếu)</span>
+        <span><i class="fa-solid fa-headset"></i> Góp ý: <b>0358.155.755</b> (Mr Hiếu)</span>
         <span class="dot">•</span>
-        <span>Giờ làm việc: <b>8:00 - 16:30 (T2 - T7)</b></span>
+        <span><i class="fa-regular fa-clock"></i> Giờ làm việc: <b>8:00 - 16:30 (T2 - T7)</b></span>
       </div>
       <div class="strip-right">
-        <button id="btnAdmin" class="link-btn" type="button">Đăng nhập Admin</button>
+        <button id="btnAdmin" class="chip-btn" type="button">
+          <i class="fa-solid fa-user-shield"></i>
+          <span>Admin</span>
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Header -->
+  <!-- HEADER -->
   <header class="header">
     <div class="container header-inner">
-      <div class="brand">
-        <div class="brand-mark">PAS</div>
+      <a class="brand" href="#">
+        <div class="brand-logo">
+          <i class="fa-solid fa-gear"></i>
+        </div>
         <div class="brand-text">
-          <div class="brand-title">SAKURA</div>
+          <div class="brand-title">PAS <span>SAKURA</span></div>
           <div class="brand-sub">Your Genuine Supplier</div>
         </div>
-      </div>
+      </a>
 
       <div class="searchbar">
-        <select id="categorySelect" class="select">
-          <option value="all">Chọn danh mục</option>
-        </select>
-        <input id="searchInput" class="input" placeholder="Tìm kiếm..." />
-        <button id="searchBtn" class="btn primary" type="button" aria-label="Search">🔎</button>
+        <div class="select-wrap">
+          <i class="fa-solid fa-layer-group"></i>
+          <select id="categorySelect" class="select">
+            <option value="all">Chọn danh mục</option>
+          </select>
+        </div>
+
+        <div class="input-wrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="searchInput" class="input" placeholder="Tìm theo tên hoặc mã sản phẩm..." />
+        </div>
+
+        <button id="searchBtn" class="btn primary" type="button" aria-label="Search">
+          <i class="fa-solid fa-magnifying-glass"></i> Tìm
+        </button>
       </div>
 
       <div class="header-actions">
         <div class="mini">
-          <div class="mini-ico">👤</div>
+          <div class="mini-ico"><i class="fa-regular fa-circle-user"></i></div>
           <div class="mini-txt">
             <div class="mini-title">Khách</div>
             <div class="mini-sub">Tài khoản</div>
           </div>
         </div>
+
         <div class="mini">
-          <div class="mini-ico">🛒</div>
+          <div class="mini-ico"><i class="fa-solid fa-cart-shopping"></i></div>
           <div class="mini-txt">
             <div class="mini-title">Giỏ hàng</div>
             <div class="mini-sub"><span id="cartCount">0</span> sản phẩm</div>
@@ -61,23 +83,27 @@
     </div>
   </header>
 
-  <!-- Nav -->
+  <!-- NAV -->
   <nav class="nav">
     <div class="container nav-inner">
-      <button class="nav-cat-btn" type="button" id="btnToggleSidebar">☰ DANH MỤC SẢN PHẨM</button>
-      <a class="nav-link active" href="#">Trang chủ</a>
-      <a class="nav-link" href="#">Sản phẩm</a>
-      <a class="nav-link" href="#">Khuyến mãi Hot</a>
-      <a class="nav-link" href="#">Catalog</a>
-      <a class="nav-link" href="#">Liên hệ</a>
-      <a class="nav-link" href="#">Về chúng tôi</a>
-      <a class="nav-link" href="#">Tin tức</a>
+      <button class="nav-cat-btn" type="button" id="btnToggleSidebar">
+        <i class="fa-solid fa-bars"></i> DANH MỤC SẢN PHẨM
+      </button>
+
+      <a class="nav-link active" href="#"><i class="fa-solid fa-house"></i> Trang chủ</a>
+      <a class="nav-link" href="#"><i class="fa-solid fa-boxes-stacked"></i> Sản phẩm</a>
+      <a class="nav-link" href="#"><i class="fa-solid fa-bolt"></i> Khuyến mãi Hot</a>
+      <a class="nav-link" href="#"><i class="fa-regular fa-file-lines"></i> Catalog</a>
+      <a class="nav-link" href="#"><i class="fa-solid fa-phone-volume"></i> Liên hệ</a>
+      <a class="nav-link" href="#"><i class="fa-regular fa-circle-question"></i> Về chúng tôi</a>
+      <a class="nav-link" href="#"><i class="fa-regular fa-newspaper"></i> Tin tức</a>
+
       <div class="nav-spacer"></div>
 
       <div class="sortbox">
-        <label for="sortSelect">Sắp xếp:</label>
+        <label for="sortSelect"><i class="fa-solid fa-arrow-up-wide-short"></i> Sắp xếp</label>
         <select id="sortSelect" class="select small">
-          <option value="newest">Thứ tự (mới nhất)</option>
+          <option value="newest">Mới nhất</option>
           <option value="az">Tên A → Z</option>
           <option value="za">Tên Z → A</option>
           <option value="priceAsc">Giá tăng dần</option>
@@ -87,102 +113,159 @@
     </div>
   </nav>
 
-  <!-- Main -->
+  <!-- MAIN -->
   <main class="container main">
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-title">DANH MỤC SẢN PHẨM</div>
+      <div class="sidebar-title">
+        <i class="fa-solid fa-list"></i> DANH MỤC SẢN PHẨM
+      </div>
+
       <ul class="cat-list" id="catList"></ul>
 
       <div class="sidebar-block">
-        <div class="sidebar-block-title">THƯƠNG HIỆU</div>
+        <div class="sidebar-block-title">
+          <i class="fa-solid fa-tags"></i> THƯƠNG HIỆU
+        </div>
         <div class="brand-tags" id="brandTags"></div>
+      </div>
+
+      <div class="sidebar-block">
+        <div class="support-box">
+          <div class="support-title"><i class="fa-solid fa-headset"></i> Hỗ trợ nhanh</div>
+          <div class="support-row"><i class="fa-solid fa-phone"></i> 0779 030 356</div>
+          <div class="support-row"><i class="fa-solid fa-phone"></i> 0358 155 755</div>
+        </div>
       </div>
     </aside>
 
     <section class="content">
       <div class="breadcrumbs">
-        <a href="#">Trang chủ</a> <span>›</span> <span id="crumbCategory">Lọc nhớt</span>
+        <a href="#"><i class="fa-solid fa-house"></i> Trang chủ</a>
+        <span>›</span>
+        <span id="crumbCategory">Lọc nhớt</span>
       </div>
 
       <div class="content-head">
-        <h1 id="pageTitle">Lọc nhớt</h1>
-        <div class="content-meta">
-          <span id="resultCount">0</span> sản phẩm
+        <div>
+          <h1 id="pageTitle">Lọc nhớt</h1>
+          <div class="content-meta">
+            <span id="resultCount">0</span> sản phẩm •
+            <span class="hint">Bấm “Admin” để thêm/sửa/xoá</span>
+          </div>
+        </div>
+
+        <div class="pill">
+          <i class="fa-solid fa-fire"></i> Hàng chính hãng • Giá tốt
         </div>
       </div>
 
       <div class="grid" id="productGrid"></div>
 
       <div class="empty" id="emptyState" hidden>
-        Không có sản phẩm phù hợp.
+        <div class="empty-ico"><i class="fa-regular fa-face-frown"></i></div>
+        <div class="empty-title">Không có sản phẩm phù hợp</div>
+        <div class="empty-sub">Thử đổi danh mục hoặc xoá từ khoá tìm kiếm.</div>
       </div>
     </section>
   </main>
 
-  <!-- Admin Panel Modal -->
+  <!-- FLOAT HOTLINE -->
+  <a class="hotline-float" href="tel:0779030356" title="Gọi hotline">
+    <i class="fa-solid fa-phone"></i>
+    <span>0779 030 356</span>
+  </a>
+
+  <!-- ADMIN MODAL -->
   <div class="modal" id="adminModal" aria-hidden="true">
     <div class="modal-backdrop" data-close="1"></div>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-label="Admin panel">
+
+    <div class="modal-card" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <div>
-          <div class="modal-title">Admin Panel</div>
-          <div class="modal-sub" id="adminStatusText">Chỉ admin mới thêm/sửa/xoá sản phẩm</div>
+        <div class="mh-left">
+          <div class="mh-title"><i class="fa-solid fa-user-shield"></i> Admin Panel</div>
+          <div class="mh-sub" id="adminStatusText">Chỉ admin mới thêm/sửa/xoá sản phẩm</div>
         </div>
-        <button class="icon-btn" id="closeAdmin" type="button" aria-label="Close">✕</button>
+        <button class="icon-btn" id="closeAdmin" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
       <div class="modal-body">
-        <!-- Login / Logout -->
         <div class="admin-auth" id="adminAuth">
           <div class="row">
-            <input id="adminPass" class="input" type="password" placeholder="Nhập mật khẩu admin" />
-            <button id="adminLoginBtn" class="btn primary" type="button">Đăng nhập</button>
-            <button id="adminLogoutBtn" class="btn" type="button" hidden>Đăng xuất</button>
+            <div class="input-wrap dark">
+              <i class="fa-solid fa-key"></i>
+              <input id="adminPass" class="input" type="password" placeholder="Nhập mật khẩu admin" />
+            </div>
+            <button id="adminLoginBtn" class="btn primary" type="button">
+              <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+            </button>
+            <button id="adminLogoutBtn" class="btn danger" type="button" hidden>
+              <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
+            </button>
           </div>
-          <div class="hint">Tip: Bạn có thể đổi mật khẩu trong <code>app.js</code> (ADMIN_PASSWORD).</div>
+          <div class="hint">
+            Đổi mật khẩu trong <code>app.js</code> (ADMIN_PASSWORD). Web tĩnh nên admin chỉ là “chế độ”.
+          </div>
         </div>
 
-        <!-- Product form -->
         <div class="admin-form" id="adminForm" hidden>
+          <div class="form-title">
+            <i class="fa-solid fa-pen-to-square"></i> Thêm / Sửa sản phẩm
+          </div>
+
           <div class="form-grid">
             <div class="field">
               <label>Tên sản phẩm</label>
               <input id="pName" class="input" placeholder="VD: Lọc nhớt giấy Sakura EO-..." />
             </div>
+
             <div class="field">
               <label>Mã (SKU)</label>
               <input id="pSku" class="input" placeholder="VD: EO-88990" />
             </div>
+
             <div class="field">
               <label>Danh mục</label>
               <select id="pCategory" class="select"></select>
             </div>
+
             <div class="field">
               <label>Thương hiệu</label>
               <input id="pBrand" class="input" placeholder="VD: Sakura" />
             </div>
+
             <div class="field">
               <label>Giá (VNĐ)</label>
               <input id="pPrice" class="input" type="number" min="0" step="1000" placeholder="VD: 120000" />
             </div>
+
             <div class="field">
               <label>Ảnh (URL)</label>
               <input id="pImage" class="input" placeholder="Dán link ảnh (https://...)" />
             </div>
+
             <div class="field full">
               <label>Mô tả ngắn</label>
-              <input id="pDesc" class="input" placeholder="VD: Lọc nhớt giấy, độ bền cao..." />
+              <input id="pDesc" class="input" placeholder="VD: Lọc giấy, bền, phù hợp nhiều xe..." />
             </div>
           </div>
 
           <div class="form-actions">
             <input id="pId" type="hidden" />
-            <button id="saveProductBtn" class="btn primary" type="button">Lưu sản phẩm</button>
-            <button id="resetFormBtn" class="btn" type="button">Xoá form</button>
+            <button id="saveProductBtn" class="btn primary" type="button">
+              <i class="fa-solid fa-floppy-disk"></i> Lưu
+            </button>
+            <button id="resetFormBtn" class="btn" type="button">
+              <i class="fa-solid fa-rotate-left"></i> Xoá form
+            </button>
           </div>
 
           <div class="admin-list">
-            <div class="admin-list-title">Danh sách sản phẩm</div>
+            <div class="admin-list-title">
+              <i class="fa-solid fa-table-list"></i> Danh sách sản phẩm
+            </div>
+
             <div class="admin-table-wrap">
               <table class="admin-table">
                 <thead>
@@ -202,11 +285,13 @@
       </div>
 
       <div class="modal-footer">
-        <div class="muted">Web tĩnh (GitHub Pages) nên admin chỉ mang tính “chế độ”.</div>
+        <div class="muted">
+          Gợi ý: nếu giao diện vẫn “trắng đen” => CSS không load. Đảm bảo file đúng tên: <b>styles.css</b> và cùng thư mục với index.
+        </div>
       </div>
     </div>
   </div>
 
-  <script src="./app.js"></script>
+  <script defer src="app.js?v=3"></script>
 </body>
 </html>
