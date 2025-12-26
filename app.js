@@ -1,113 +1,131 @@
 /* =========================
-   CONFIG
+   CONFIG — DÁN URL WEB APP /exec Ở ĐÂY
 ========================= */
-const ADMIN_PASSWORD = "123456"; // đổi mật khẩu ở đây
-const DB_NAME = "kho_db_v4";
-const DB_VERSION = 1;
+const API_URL = "https://script.google.com/macros/s/AKfycbyVyL-CA1zgK0DyGkD6GJel8j13xCy5tAKKk5FELGRdYo6BGyrD5p0hrE3hNkWBzF8/exec";
 
+// Mật khẩu bật chế độ Admin (UI)
+const ADMIN_PASSWORD = "123456";
+
+// Fallback image
 const FALLBACK_IMG =
   "data:image/svg+xml;charset=utf-8," +
   encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" width="800" height="800">
+  <svg xmlns="http://www.w3.org/2000/svg" width="900" height="900">
     <rect width="100%" height="100%" fill="#f3f4f6"/>
-    <circle cx="400" cy="300" r="130" fill="#e5e7eb"/>
-    <text x="50%" y="60%" dominant-baseline="middle" text-anchor="middle"
+    <circle cx="450" cy="380" r="150" fill="#e5e7eb"/>
+    <text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle"
       font-family="Arial" font-size="28" font-weight="700" fill="#6b7280">No Image</text>
   </svg>`);
 
 /* =========================
    STATE
 ========================= */
-const state = {
-  isAdmin: localStorage.getItem("is_admin_v4") === "1",
+const S = {
+  isAdmin: localStorage.getItem("is_admin_v1") === "1",
+  adminKey: localStorage.getItem("admin_key_v1") || "",
+  mode: localStorage.getItem("mode_v1") || "dashboard", // dashboard | shop
+
   products: [],
-  movements: [],
-  stock: new Map(),
+  moves: [],
+  warehouses: [],
+
+  // stock maps
+  stockTotal: new Map(),            // productId -> qty
+  stockByWH: new Map(),             // `${wh}|${pid}` -> qty
 
   // filters
-  q: "",
-  cat: "",
-  brand: "",
-  sort: "newest",
+  filters: { q:"", cat:"", brand:"", sort:"newest" },
+  globalWarehouse: "", // "" means all
 
-  // movement context
-  moveProductId: null,
+  // shop filters
+  shop: { q:"", cat:"", brand:"" },
 
-  // shop
-  shopMode: false,
-  shopQ: "",
-  shopCat: ""
+  // move context
+  moveProductId: null
 };
-
-let db = null;
 
 /* =========================
    DOM
 ========================= */
-const $ = (id) => document.getElementById(id);
+const $ = (id)=>document.getElementById(id);
 
-const adminView = $("adminView");
+const pillRole = $("pillRole");
+const chipOnline = $("chipOnline");
+
+const btnPing = $("btnPing");
+const btnReload = $("btnReload");
+const btnExportCSV = $("btnExportCSV");
+const csvFile = $("csvFile");
+const btnAdmin = $("btnAdmin");
+
+const btnModeDashboard = $("btnModeDashboard");
+const btnModeShop = $("btnModeShop");
+
+const globalWarehouse = $("globalWarehouse");
+
+const statProducts = $("statProducts");
+const statMoves = $("statMoves");
+const statWarehouses = $("statWarehouses");
+
 const shopView = $("shopView");
+const dashboardView = $("dashboardView");
+const shopSearch = $("shopSearch");
+const shopCat = $("shopCat");
+const shopBrand = $("shopBrand");
+const shopGrid = $("shopGrid");
+const shopEmpty = $("shopEmpty");
 
-const btnGoShop = $("btnGoShop");
-const btnRefresh = $("btnRefresh");
-const btnSnapshot = $("btnSnapshot");
-const btnQuote = $("btnQuote");
-const btnOpenAdmin = $("btnOpenAdmin");
+const pid = $("pid");
+const pname = $("pname");
+const psku = $("psku");
+const poem = $("poem");
+const pcat = $("pcat");
+const pbrand = $("pbrand");
+const punit = $("punit");
+const pRetail = $("pRetail");
+const pWholesale = $("pWholesale");
+const pdesc = $("pdesc");
+const pimgurl = $("pimgurl");
+const pfile = $("pfile");
+const btnPick = $("btnPick");
+const pactive = $("pactive");
 
-const adminPill = $("adminPill");
-
-const pId = $("pId");
-const pName = $("pName");
-const pImageUrl = $("pImageUrl");
-const pImageFile = $("pImageFile");
-const btnPickImage = $("btnPickImage");
-const pCategory = $("pCategory");
-const pBrand = $("pBrand");
-const pPrice = $("pPrice");
-const pUnit = $("pUnit");
-const pInitStock = $("pInitStock");
-const pOEM = $("pOEM");
-const pNote = $("pNote");
-const imgPreview = $("imgPreview");
-const previewHint = $("previewHint");
+const previewImg = $("previewImg");
+const hint = $("hint");
 
 const btnSave = $("btnSave");
 const btnReset = $("btnReset");
-const btnDelete = $("btnDelete");
+const btnDel = $("btnDel");
 
-const qSearch = $("qSearch");
-const fCategory = $("fCategory");
-const fBrand = $("fBrand");
-const fSort = $("fSort");
-const btnClearFilters = $("btnClearFilters");
-
-const tbody = $("tbody");
+const q = $("q");
+const fcat = $("fcat");
+const fbrand = $("fbrand");
+const fsort = $("fsort");
+const btnClear = $("btnClear");
+const tb = $("tb");
 const empty = $("empty");
 
-const adminModal = $("adminModal");
+const mAdmin = $("mAdmin");
 const adminPass = $("adminPass");
+const adminKey = $("adminKey");
 const btnLogin = $("btnLogin");
 const btnLogout = $("btnLogout");
-const btnOnlyView = $("btnOnlyView");
 
-const moveModal = $("moveModal");
-const moveTitle = $("moveTitle");
-const mType = $("mType");
-const mQty = $("mQty");
-const mNote = $("mNote");
+const mMove = $("mMove");
+const moveFor = $("moveFor");
+const mtype = $("mtype");
+const mqty = $("mqty");
+const mnote = $("mnote");
+const mwarehouse = $("mwarehouse");
+const mfrom = $("mfrom");
+const mto = $("mto");
+const wrapWarehouse = $("wrapWarehouse");
+const wrapFrom = $("wrapFrom");
+const wrapTo = $("wrapTo");
 const btnSaveMove = $("btnSaveMove");
 
 const toast = $("toast");
 const toastText = $("toastText");
-
-const cartCount = $("cartCount");
-const cartBadge = $("cartBadge");
-
-const shopSearch = $("shopSearch");
-const shopCat = $("shopCat");
-const shopGrid = $("shopGrid");
-const shopEmpty = $("shopEmpty");
 
 /* =========================
    INIT
@@ -118,401 +136,509 @@ async function init(){
   wireModalClose();
   wireUI();
 
-  await dbInit();
-  await ensureSeedOnce();
-  await reloadAll();
-
-  syncAdminUI();
-  renderAll();
   updatePreview(FALLBACK_IMG, true);
+  syncAdminUI();
+  syncModeUI();
+
+  await reloadAll();
+  renderAll();
 }
 
+/* =========================
+   UI WIRING
+========================= */
 function wireModalClose(){
-  document.addEventListener("click", (e) => {
-    const t = e.target;
-    if (t?.dataset?.close) closeAllModals();
+  document.addEventListener("click",(e)=>{
+    if (e.target?.dataset?.close) closeAllModals();
   });
 }
 
 function wireUI(){
-  btnGoShop.addEventListener("click", () => {
-    state.shopMode = !state.shopMode;
+  btnPing?.addEventListener("click", async ()=>{
+    const r = await apiGet("ping");
+    if (r.ok) toastOK("API OK: " + (r.time || ""));
+    else toastBad(r.error || "Ping failed");
+  });
+
+  btnReload?.addEventListener("click", async ()=>{
+    await reloadAll();
+    toastOK("Đã làm mới");
+    renderAll();
+  });
+
+  btnExportCSV?.addEventListener("click", ()=>{
+    exportCSV();
+  });
+
+  csvFile?.addEventListener("change", async ()=>{
+    const file = csvFile.files?.[0];
+    csvFile.value = "";
+    if (!file) return;
+    if (!S.isAdmin) return toastBad("Chỉ admin import.");
+    try{
+      const txt = await file.text();
+      const rows = parseCSV(txt);
+      await importCSV(rows);
+    }catch(err){
+      toastBad(String(err.message || err));
+    }
+  });
+
+  btnAdmin?.addEventListener("click", ()=>openModal(mAdmin));
+
+  btnModeDashboard?.addEventListener("click", ()=>{
+    S.mode = "dashboard";
+    localStorage.setItem("mode_v1", S.mode);
     syncModeUI();
     renderAll();
   });
 
-  btnRefresh.addEventListener("click", async () => {
-    await reloadAll();
-    toastOK("Đã làm mới dữ liệu");
+  btnModeShop?.addEventListener("click", ()=>{
+    S.mode = "shop";
+    localStorage.setItem("mode_v1", S.mode);
+    syncModeUI();
     renderAll();
   });
 
-  btnSnapshot.addEventListener("click", () => toastOK("Chức năng Chụp TồnKho (demo UI)"));
-  btnQuote.addEventListener("click", () => toastOK("Chức năng In báo giá (demo UI)"));
-
-  btnOpenAdmin.addEventListener("click", () => openModal(adminModal));
-
-  btnPickImage.addEventListener("click", () => pImageFile.click());
-
-  pImageUrl.addEventListener("input", () => {
-    const url = (pImageUrl.value || "").trim();
-    if (!url) return updatePreview(FALLBACK_IMG, true);
-    updatePreview(url, false);
+  globalWarehouse?.addEventListener("change", ()=>{
+    S.globalWarehouse = globalWarehouse.value;
+    renderTable();
+    renderShop();
   });
 
-  pImageFile.addEventListener("change", async () => {
-    const f = pImageFile.files?.[0];
-    if (!f) return;
-    const dataUrl = await fileToDataUrlCompressed(f, 900, 0.86);
-    pImageUrl.value = ""; // ưu tiên file
-    updatePreview(dataUrl, false);
-    imgPreview.dataset.src = dataUrl;
+  // form image
+  btnPick?.addEventListener("click", ()=>pfile.click());
+
+  pimgurl?.addEventListener("input", ()=>{
+    const url = (pimgurl.value || "").trim();
+    if(!url){
+      previewImg.dataset.src = "";
+      updatePreview(FALLBACK_IMG,true);
+      return;
+    }
+    previewImg.dataset.src = url;
+    updatePreview(url,false);
   });
 
-  btnSave.addEventListener("click", async () => {
-    if (!state.isAdmin) return toastBad("Bạn phải đăng nhập admin.");
-    await saveProductFromForm();
+  pfile?.addEventListener("change", async ()=>{
+    const file = pfile.files?.[0];
+    if (!file) return;
+    const dataUrl = await fileToDataUrlCompressed(file, 1000, 0.86);
+    previewImg.dataset.src = dataUrl;
+    pimgurl.value = "";
+    updatePreview(dataUrl,false);
   });
 
-  btnReset.addEventListener("click", () => resetForm());
+  btnReset?.addEventListener("click", ()=>resetForm());
 
-  btnDelete.addEventListener("click", async () => {
-    if (!state.isAdmin) return toastBad("Bạn phải đăng nhập admin.");
-    const id = pId.value;
-    if (!id) return;
-    if (!confirm("Xoá sản phẩm này?")) return;
-    await dbDelete("products", id);
+  btnSave?.addEventListener("click", async ()=>{
+    if(!S.isAdmin) return toastBad("Bạn phải đăng nhập admin.");
+    await saveProduct();
+  });
+
+  btnDel?.addEventListener("click", async ()=>{
+    if(!S.isAdmin) return toastBad("Chỉ admin.");
+    const id = pid.value;
+    if(!id) return;
+    if(!confirm("Xoá sản phẩm này?")) return;
+    const res = await apiPost({ action:"delete_product", adminKey:S.adminKey, id });
+    if(!res.ok) return toastBad(res.error || "Delete failed");
     await reloadAll();
     resetForm();
     toastOK("Đã xoá");
     renderAll();
   });
 
-  // Filters
-  qSearch.addEventListener("input", () => { state.q = qSearch.value.trim(); renderTable(); });
-  fCategory.addEventListener("change", () => { state.cat = fCategory.value; renderTable(); });
-  fBrand.addEventListener("change", () => { state.brand = fBrand.value; renderTable(); });
-  fSort.addEventListener("change", () => { state.sort = fSort.value; renderTable(); });
+  // table filters
+  q?.addEventListener("input", ()=>{ S.filters.q = q.value.trim(); renderTable(); });
+  fcat?.addEventListener("change", ()=>{ S.filters.cat = fcat.value; renderTable(); });
+  fbrand?.addEventListener("change", ()=>{ S.filters.brand = fbrand.value; renderTable(); });
+  fsort?.addEventListener("change", ()=>{ S.filters.sort = fsort.value; renderTable(); });
 
-  btnClearFilters.addEventListener("click", () => {
-    state.q = ""; state.cat = ""; state.brand = ""; state.sort = "newest";
-    qSearch.value = ""; fCategory.value = ""; fBrand.value = ""; fSort.value = "newest";
+  btnClear?.addEventListener("click", ()=>{
+    S.filters = { q:"", cat:"", brand:"", sort:"newest" };
+    q.value=""; fcat.value=""; fbrand.value=""; fsort.value="newest";
     renderTable();
   });
 
-  // Admin auth
-  btnLogin.addEventListener("click", () => {
-    const pass = (adminPass.value || "").trim();
-    if (pass === ADMIN_PASSWORD){
-      state.isAdmin = true;
-      localStorage.setItem("is_admin_v4", "1");
-      adminPass.value = "";
-      toastOK("Admin ON");
-      syncAdminUI();
-      closeAllModals();
-      renderAll();
-    } else toastBad("Sai mật khẩu!");
+  // admin auth
+  btnLogin?.addEventListener("click", ()=>{
+    const pass = (adminPass.value||"").trim();
+    const key = (adminKey.value||"").trim();
+    if (pass !== ADMIN_PASSWORD) return toastBad("Sai mật khẩu admin UI.");
+    if (!key) return toastBad("Thiếu ADMIN_KEY.");
+
+    S.isAdmin = true;
+    S.adminKey = key;
+    localStorage.setItem("is_admin_v1","1");
+    localStorage.setItem("admin_key_v1", key);
+    adminPass.value = "";
+    toastOK("Admin ON");
+    syncAdminUI();
+    closeAllModals();
+    renderAll();
   });
 
-  btnLogout.addEventListener("click", () => {
-    state.isAdmin = false;
-    localStorage.setItem("is_admin_v4", "0");
+  btnLogout?.addEventListener("click", ()=>{
+    S.isAdmin = false;
+    localStorage.setItem("is_admin_v1","0");
     toastOK("Admin OFF");
     syncAdminUI();
     closeAllModals();
     renderAll();
   });
 
-  btnOnlyView.addEventListener("click", () => {
-    state.shopMode = true;
-    syncModeUI();
-    closeAllModals();
-    renderAll();
+  // shop filters
+  shopSearch?.addEventListener("input", ()=>{ S.shop.q = shopSearch.value.trim(); renderShop(); });
+  shopCat?.addEventListener("change", ()=>{ S.shop.cat = shopCat.value; renderShop(); });
+  shopBrand?.addEventListener("change", ()=>{ S.shop.brand = shopBrand.value; renderShop(); });
+
+  // move modal type switching
+  mtype?.addEventListener("change", ()=>{
+    syncMoveTypeUI();
   });
 
-  // Movement
-  btnSaveMove.addEventListener("click", async () => {
-    if (!state.isAdmin) return toastBad("Chỉ admin.");
-    const qty = Number(mQty.value || 0);
-    if (!state.moveProductId) return toastBad("Thiếu sản phẩm.");
-    if (!Number.isFinite(qty) || qty <= 0) return toastBad("Số lượng > 0");
+  btnSaveMove?.addEventListener("click", async ()=>{
+    if(!S.isAdmin) return toastBad("Chỉ admin.");
 
-    await dbPut("movements", {
+    const qty = Number(mqty.value||0);
+    if(!S.moveProductId) return toastBad("Thiếu sản phẩm.");
+    if(!Number.isFinite(qty) || qty<=0) return toastBad("Số lượng > 0");
+
+    const type = mtype.value;
+    const note = (mnote.value||"").trim();
+
+    const payload = {
       id: rid(),
-      productId: state.moveProductId,
-      type: mType.value,
+      type,
+      productId: S.moveProductId,
       qty,
-      note: (mNote.value || "").trim(),
-      at: Date.now()
-    });
+      cost: 0,
+      note
+    };
 
-    mQty.value = "";
-    mNote.value = "";
+    if (type === "IN" || type === "OUT"){
+      payload.warehouse = mwarehouse.value || (S.warehouses[0]?.code || "A");
+      payload.fromWarehouse = "";
+      payload.toWarehouse = "";
+    } else {
+      payload.warehouse = "";
+      payload.fromWarehouse = mfrom.value;
+      payload.toWarehouse = mto.value;
+      if (!payload.fromWarehouse || !payload.toWarehouse) return toastBad("Chọn đủ kho.");
+      if (payload.fromWarehouse === payload.toWarehouse) return toastBad("Kho đi và kho đến phải khác nhau.");
+    }
+
+    const res = await apiPost({ action:"add_move", adminKey:S.adminKey, move: payload });
+    if(!res.ok) return toastBad(res.error || "Move failed");
+
     closeAllModals();
-
+    mqty.value=""; mnote.value="";
     await reloadAll();
     toastOK("Đã lưu phiếu");
     renderAll();
   });
-
-  // Shop view
-  shopSearch.addEventListener("input", () => { state.shopQ = shopSearch.value.trim(); renderShop(); });
-  shopCat.addEventListener("change", () => { state.shopCat = shopCat.value; renderShop(); });
 }
 
+/* =========================
+   MODE + ADMIN UI
+========================= */
 function syncModeUI(){
-  adminView.hidden = state.shopMode;
-  shopView.hidden = !state.shopMode;
-  btnGoShop.innerHTML = state.shopMode
-    ? `<i class="fa-solid fa-gauge"></i> Quản lý kho`
-    : `<i class="fa-solid fa-store"></i> Cửa hàng`;
+  const isShop = S.mode === "shop";
+  shopView.hidden = !isShop;
+  dashboardView.hidden = isShop;
 }
 
 function syncAdminUI(){
-  adminPill.textContent = state.isAdmin ? "ADMIN" : "KHÁCH";
-  adminPill.style.color = state.isAdmin ? "#1e3a8a" : "#6b7280";
-  adminPill.style.background = state.isAdmin ? "#eef2ff" : "#f8fafc";
-  btnLogout.hidden = !state.isAdmin;
-  btnLogin.hidden = state.isAdmin;
+  pillRole.textContent = S.isAdmin ? "ADMIN" : "KHÁCH";
 
-  btnSave.disabled = !state.isAdmin;
-  btnReset.disabled = !state.isAdmin;
-  btnPickImage.disabled = !state.isAdmin;
-  pImageUrl.disabled = !state.isAdmin;
+  btnLogout.hidden = !S.isAdmin;
+  btnLogin.hidden = S.isAdmin;
 
-  // khóa input nếu là khách
-  [pName,pCategory,pBrand,pPrice,pUnit,pInitStock,pOEM,pNote].forEach(el => el.disabled = !state.isAdmin);
+  const lock = !S.isAdmin;
+  [pname,psku,poem,pcat,pbrand,punit,pRetail,pWholesale,pdesc,pimgurl,pactive].forEach(el=>el.disabled = lock);
+  btnPick.disabled = lock;
+  btnSave.disabled = lock;
+  btnReset.disabled = lock;
+  btnDel.hidden = !(S.isAdmin && pid.value);
+
+  chipOnline.innerHTML = `<span class="dot"></span> ${S.isAdmin ? "Admin ready" : "Viewer"}`;
 }
 
+/* =========================
+   DATA LOAD
+========================= */
+async function reloadAll(){
+  setChip("Loading...", "#f59e0b");
+  const [p,m,w] = await Promise.all([
+    apiGet("list_products"),
+    apiGet("list_moves"),
+    apiGet("list_warehouses")
+  ]);
+
+  if(!p.ok){ setChip("Products error", "#ef4444"); toastBad(p.error||"Load products failed"); return; }
+  if(!m.ok){ setChip("Moves error", "#ef4444"); toastBad(m.error||"Load moves failed"); return; }
+  if(!w.ok){ setChip("Warehouses error", "#ef4444"); toastBad(w.error||"Load warehouses failed"); return; }
+
+  S.products = (p.data || []).filter(x => x.active !== false);
+  S.moves = m.data || [];
+  S.warehouses = (w.data || []).filter(x => x.active !== false);
+
+  rebuildStock();
+  buildOptions();
+
+  // stats
+  statProducts.textContent = String(S.products.length);
+  statMoves.textContent = String(S.moves.length);
+  statWarehouses.textContent = String(S.warehouses.length);
+
+  setChip("OK", "#22c55e");
+}
+
+function setChip(text, color){
+  chipOnline.innerHTML = `<span class="dot" style="background:${color}"></span> ${text}`;
+}
+
+/* =========================
+   STOCK
+========================= */
+function rebuildStock(){
+  const total = new Map();
+  const byWH = new Map();
+
+  const add = (wh, pid, delta)=>{
+    const k = `${wh}|${pid}`;
+    byWH.set(k, (byWH.get(k)||0) + delta);
+    total.set(pid, (total.get(pid)||0) + delta);
+  };
+
+  for(const mv of S.moves){
+    const qty = Number(mv.qty||0);
+    if (!mv.productId) continue;
+
+    if (mv.type === "IN"){
+      add(mv.warehouse || "A", mv.productId, qty);
+    } else if (mv.type === "OUT"){
+      add(mv.warehouse || "A", mv.productId, -qty);
+    } else if (mv.type === "TRANSFER"){
+      if (mv.fromWarehouse) add(mv.fromWarehouse, mv.productId, -qty);
+      if (mv.toWarehouse) add(mv.toWarehouse, mv.productId, qty);
+    }
+  }
+
+  S.stockTotal = total;
+  S.stockByWH = byWH;
+}
+
+function stockTotal(pid){ return S.stockTotal.get(pid)||0; }
+function stockWH(wh,pid){ return S.stockByWH.get(`${wh}|${pid}`)||0; }
+
+/* =========================
+   OPTIONS
+========================= */
+function buildOptions(){
+  // categories + brands
+  const cats = uniq(S.products.map(p => (p.category||"").trim()).filter(Boolean)).sort(locale);
+  const brands = uniq(S.products.map(p => (p.brand||"").trim()).filter(Boolean)).sort(locale);
+
+  fcat.innerHTML = `<option value="">Tất cả danh mục</option>` + cats.map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
+  fbrand.innerHTML = `<option value="">Tất cả thương hiệu</option>` + brands.map(b=>`<option value="${escAttr(b)}">${esc(b)}</option>`).join("");
+
+  shopCat.innerHTML = `<option value="">Tất cả danh mục</option>` + cats.map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
+  shopBrand.innerHTML = `<option value="">Tất cả thương hiệu</option>` + brands.map(b=>`<option value="${escAttr(b)}">${esc(b)}</option>`).join("");
+
+  // global warehouse
+  globalWarehouse.innerHTML =
+    `<option value="">Tất cả kho</option>` +
+    S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||("Kho "+w.code))}</option>`).join("");
+
+  // move modal warehouse selects
+  mwarehouse.innerHTML = S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||"")}</option>`).join("");
+  mfrom.innerHTML = S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||"")}</option>`).join("");
+  mto.innerHTML = S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||"")}</option>`).join("");
+
+  // keep selection
+  if (S.globalWarehouse && !S.warehouses.some(w=>w.code===S.globalWarehouse)){
+    S.globalWarehouse = "";
+  }
+  globalWarehouse.value = S.globalWarehouse;
+}
+
+/* =========================
+   RENDER ALL
+========================= */
 function renderAll(){
-  syncModeUI();
   syncAdminUI();
-  buildFilterOptions();
+  syncModeUI();
   renderTable();
   renderShop();
 }
 
 /* =========================
-   FORM
+   TABLE RENDER
 ========================= */
-function resetForm(){
-  pId.value = "";
-  pName.value = "";
-  pImageUrl.value = "";
-  pCategory.value = "";
-  pBrand.value = "";
-  pPrice.value = "0";
-  pUnit.value = "";
-  pInitStock.value = "0";
-  pOEM.value = "";
-  pNote.value = "";
-  pImageFile.value = "";
-  imgPreview.dataset.src = "";
-  updatePreview(FALLBACK_IMG, true);
-  btnDelete.hidden = true;
-}
-
-async function saveProductFromForm(){
-  const id = pId.value || rid();
-  const name = (pName.value || "").trim();
-  if (!name) return toastBad("Tên sản phẩm là bắt buộc.");
-
-  const image = imgPreview.dataset.src || (pImageUrl.value || "").trim() || FALLBACK_IMG;
-
-  const product = {
-    id,
-    name,
-    category: (pCategory.value || "").trim(),
-    brand: (pBrand.value || "").trim(),
-    price: Number(pPrice.value || 0),
-    unit: (pUnit.value || "").trim(),
-    oem: (pOEM.value || "").trim(),
-    note: (pNote.value || "").trim(),
-    image,
-    createdAt: state.products.find(x => x.id === id)?.createdAt || Date.now()
-  };
-
-  await dbPut("products", product);
-
-  // tồn ban đầu chỉ áp dụng khi tạo mới (id mới) hoặc khi người dùng nhập >0 và product chưa có movement
-  const initStock = Number(pInitStock.value || 0);
-  const existed = state.products.some(x => x.id === id);
-  if (!existed && initStock > 0){
-    await dbPut("movements", {
-      id: rid(),
-      productId: id,
-      type: "IN",
-      qty: initStock,
-      note: "Tồn ban đầu",
-      at: Date.now()
-    });
-  }
-
-  await reloadAll();
-  toastOK("Đã lưu sản phẩm");
-  renderAll();
-
-  // sau khi lưu, chuyển form sang mode edit
-  pId.value = id;
-  btnDelete.hidden = false;
-}
-
-function fillForm(p){
-  pId.value = p.id;
-  pName.value = p.name || "";
-  pCategory.value = p.category || "";
-  pBrand.value = p.brand || "";
-  pPrice.value = String(Number(p.price || 0));
-  pUnit.value = p.unit || "";
-  pOEM.value = p.oem || "";
-  pNote.value = p.note || "";
-  pInitStock.value = "0"; // không set lại tồn ban đầu
-  pImageUrl.value = "";
-  pImageFile.value = "";
-  imgPreview.dataset.src = p.image || "";
-  updatePreview(p.image || FALLBACK_IMG, !p.image);
-  btnDelete.hidden = !state.isAdmin ? true : false;
-}
-
-/* =========================
-   TABLE
-========================= */
-function buildFilterOptions(){
-  // Category options from data
-  const cats = uniq(state.products.map(p => (p.category||"").trim()).filter(Boolean)).sort(locale);
-  const brands = uniq(state.products.map(p => (p.brand||"").trim()).filter(Boolean)).sort(locale);
-
-  fCategory.innerHTML = `<option value="">Tất cả</option>` + cats.map(c => `<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
-  fBrand.innerHTML = `<option value="">Tất cả</option>` + brands.map(b => `<option value="${escAttr(b)}">${esc(b)}</option>`).join("");
-
-  // shop categories
-  shopCat.innerHTML = `<option value="">Tất cả loại</option>` + cats.map(c => `<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
-}
-
 function getFilteredProducts(){
-  let items = [...state.products];
+  let arr = [...S.products];
 
-  const q = (state.q || "").toLowerCase();
-  if (q){
-    items = items.filter(p => {
-      const hay = `${p.name||""} ${p.oem||""} ${p.brand||""} ${p.category||""}`.toLowerCase();
-      return hay.includes(q);
+  const qv = (S.filters.q||"").toLowerCase();
+  if (qv){
+    arr = arr.filter(p=>{
+      const hay = `${p.name||""} ${p.sku||""} ${p.oem||""} ${p.brand||""} ${p.category||""}`.toLowerCase();
+      return hay.includes(qv);
     });
   }
 
-  if (state.cat) items = items.filter(p => (p.category||"").trim() === state.cat);
-  if (state.brand) items = items.filter(p => (p.brand||"").trim() === state.brand);
+  if (S.filters.cat) arr = arr.filter(p => (p.category||"").trim() === S.filters.cat);
+  if (S.filters.brand) arr = arr.filter(p => (p.brand||"").trim() === S.filters.brand);
 
-  items.sort((a,b) => {
-    if (state.sort === "az") return locale(a.name, b.name);
-    if (state.sort === "za") return locale(b.name, a.name);
-    if (state.sort === "stockDesc") return stockOf(b.id) - stockOf(a.id);
-    if (state.sort === "stockAsc") return stockOf(a.id) - stockOf(b.id);
-    return Number(b.createdAt||0) - Number(a.createdAt||0);
+  arr.sort((a,b)=>{
+    if (S.filters.sort === "az") return locale(a.name,b.name);
+    if (S.filters.sort === "za") return locale(b.name,a.name);
+    if (S.filters.sort === "stockDesc") return getDisplayStock(b.id) - getDisplayStock(a.id);
+    if (S.filters.sort === "stockAsc") return getDisplayStock(a.id) - getDisplayStock(b.id);
+    return String(b.updatedAt||"").localeCompare(String(a.updatedAt||""));
   });
 
-  return items;
+  return arr;
+}
+
+function getDisplayStock(productId){
+  if (!S.globalWarehouse) return stockTotal(productId);
+  return stockWH(S.globalWarehouse, productId);
 }
 
 function renderTable(){
   const items = getFilteredProducts();
   empty.hidden = items.length !== 0;
 
-  tbody.innerHTML = items.map(p => {
-    const s = stockOf(p.id);
-    const img = p.image || FALLBACK_IMG;
-    const price = formatVND(p.price || 0);
+  const whShort = S.warehouses.slice(0,5); // show up to 5 kho line
+
+  tb.innerHTML = items.map(p=>{
+    const img = p.imageUrl || FALLBACK_IMG;
+
+    const whLine = !S.globalWarehouse
+      ? whShort.map(w=>`${w.code}:${stockWH(w.code,p.id)}`).join(" • ")
+      : `${S.globalWarehouse}:${stockWH(S.globalWarehouse,p.id)} (lọc)`;
+
+    const stock = getDisplayStock(p.id);
+
+    const priceText = formatVND(p.priceRetail || 0);
 
     return `
       <tr>
-        <td><input type="checkbox" data-check="${escAttr(p.id)}"/></td>
         <td>
           <div class="timg">
             <img src="${escAttr(img)}" alt="img" onerror="this.src='${escAttr(FALLBACK_IMG)}'">
           </div>
         </td>
         <td>
-          <div style="font-weight:1000">${esc(p.name)}</div>
-          <div class="muted small">OEM: ${esc(p.oem||"—")} • ĐV: ${esc(p.unit||"—")}</div>
+          <div style="font-weight:1000">${esc(p.name||"")}</div>
+          <div class="small muted">SKU: ${esc(p.sku||"—")} • OEM: ${esc(p.oem||"—")} • ĐV: ${esc(p.unit||"—")}</div>
+          <div class="whline">${esc(whLine)} • <b>Tổng:</b> ${stockTotal(p.id)}</div>
         </td>
         <td>${esc(p.category||"")}</td>
         <td>${esc(p.brand||"")}</td>
-        <td><span class="badge">${s}</span></td>
-        <td style="font-weight:1000">${price}</td>
+        <td><span class="badge"><i class="fa-solid fa-box"></i> ${stock}</span></td>
+        <td style="font-weight:1000">${priceText}</td>
         <td>
-          <div class="actions">
-            <button class="btn btn-sm btn-ghost" data-edit="${escAttr(p.id)}">
-              <i class="fa-solid fa-pen"></i> Sửa
-            </button>
-            <button class="btn btn-sm btn-primary" data-in="${escAttr(p.id)}">
-              <i class="fa-solid fa-arrow-down"></i> Nhập
-            </button>
-            <button class="btn btn-sm btn-dark" data-out="${escAttr(p.id)}">
-              <i class="fa-solid fa-arrow-up"></i> Xuất
-            </button>
+          <div class="act">
+            <button class="btn btn-sm" data-edit="${escAttr(p.id)}"><i class="fa-solid fa-pen"></i> Sửa</button>
+            <button class="btn btn-sm btn-primary" data-move="${escAttr(p.id)}" data-kind="IN"><i class="fa-solid fa-arrow-down"></i> Nhập</button>
+            <button class="btn btn-sm btn-dark" data-move="${escAttr(p.id)}" data-kind="OUT"><i class="fa-solid fa-arrow-up"></i> Xuất</button>
+            <button class="btn btn-sm btn-ghost" data-move="${escAttr(p.id)}" data-kind="TRANSFER"><i class="fa-solid fa-right-left"></i> Chuyển</button>
           </div>
         </td>
       </tr>
     `;
   }).join("");
 
-  // wire actions
-  tbody.querySelectorAll("[data-edit]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.edit;
-      const p = state.products.find(x => x.id === id);
+  // wire edit
+  tb.querySelectorAll("[data-edit]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      if (!S.isAdmin) return toastBad("Khách chỉ xem.");
+      const p = S.products.find(x=>x.id === btn.dataset.edit);
       if (!p) return;
-      if (!state.isAdmin) return toastBad("Khách chỉ xem.");
       fillForm(p);
-      toastOK("Đã nạp dữ liệu để sửa");
+      toastOK("Đã nạp form để sửa");
     });
   });
 
-  tbody.querySelectorAll("[data-in],[data-out]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      if (!state.isAdmin) return toastBad("Chỉ admin nhập/xuất.");
-      const id = btn.dataset.in || btn.dataset.out;
-      const p = state.products.find(x => x.id === id);
+  // wire move
+  tb.querySelectorAll("[data-move]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      if (!S.isAdmin) return toastBad("Chỉ admin.");
+      const id = btn.dataset.move;
+      const kind = btn.dataset.kind;
+      const p = S.products.find(x=>x.id === id);
       if (!p) return;
-      openMoveModal(id, p.name, btn.dataset.in ? "IN" : "OUT");
+
+      S.moveProductId = id;
+      moveFor.textContent = `Sản phẩm: ${p.name} (${p.sku||"no-sku"})`;
+
+      mtype.value = kind;
+      mqty.value = "";
+      mnote.value = "";
+
+      // default values
+      if (S.warehouses.length){
+        mwarehouse.value = S.globalWarehouse || S.warehouses[0].code;
+        mfrom.value = S.warehouses[0].code;
+        mto.value = S.warehouses[Math.min(1, S.warehouses.length-1)].code;
+      }
+
+      syncMoveTypeUI();
+      openModal(mMove);
     });
   });
 }
 
+function syncMoveTypeUI(){
+  const t = mtype.value;
+  if (t === "TRANSFER"){
+    wrapWarehouse.hidden = true;
+    wrapFrom.hidden = false;
+    wrapTo.hidden = false;
+  } else {
+    wrapWarehouse.hidden = false;
+    wrapFrom.hidden = true;
+    wrapTo.hidden = true;
+  }
+}
+
 /* =========================
-   SHOP VIEW (KHÁCH)
+   SHOP RENDER
 ========================= */
 function renderShop(){
-  // cart demo
-  const c = Number(localStorage.getItem("cart_v4") || "0");
-  if (cartCount) cartCount.textContent = String(c);
-  if (cartBadge) cartBadge.textContent = String(c);
+  const qv = (S.shop.q || "").toLowerCase();
+  const cat = S.shop.cat || "";
+  const brand = S.shop.brand || "";
 
-  const q = (state.shopQ || "").toLowerCase();
-  const cat = state.shopCat || "";
+  let items = [...S.products];
 
-  let items = [...state.products];
-  if (cat) items = items.filter(p => (p.category||"").trim() === cat);
-  if (q){
-    items = items.filter(p => {
-      const hay = `${p.name||""} ${p.oem||""} ${p.brand||""} ${p.category||""}`.toLowerCase();
-      return hay.includes(q);
+  if (qv){
+    items = items.filter(p=>{
+      const hay = `${p.name||""} ${p.sku||""} ${p.oem||""} ${p.brand||""} ${p.category||""}`.toLowerCase();
+      return hay.includes(qv);
     });
   }
+  if (cat) items = items.filter(p => (p.category||"").trim() === cat);
+  if (brand) items = items.filter(p => (p.brand||"").trim() === brand);
 
   shopEmpty.hidden = items.length !== 0;
 
-  shopGrid.innerHTML = items.map(p => {
-    const img = p.image || FALLBACK_IMG;
+  shopGrid.innerHTML = items.map(p=>{
+    const img = p.imageUrl || FALLBACK_IMG;
+    const stock = getDisplayStock(p.id);
     return `
       <div class="shop-card">
         <div class="shop-img">
           <img src="${escAttr(img)}" alt="img" onerror="this.src='${escAttr(FALLBACK_IMG)}'">
         </div>
         <div class="shop-body">
-          <div class="shop-name">${esc(p.name)}</div>
-          <div class="shop-meta">${esc(p.brand||"")} • ${esc(p.category||"")}</div>
-          <div class="shop-stock">Tồn: ${stockOf(p.id)} • ${formatVND(p.price||0)}</div>
+          <div class="shop-name">${esc(p.name||"")}</div>
+          <div class="shop-meta">${esc(p.brand||"")} • ${esc(p.category||"")} • SKU: ${esc(p.sku||"—")}</div>
+          <div class="shop-price">${formatVND(p.priceRetail||0)}</div>
+          <div class="shop-stock">Tồn: ${stock}${S.globalWarehouse ? ` (Kho ${esc(S.globalWarehouse)})` : ""}</div>
         </div>
       </div>
     `;
@@ -520,77 +646,304 @@ function renderShop(){
 }
 
 /* =========================
-   MOVEMENT MODAL
+   FORM
 ========================= */
-function openMoveModal(productId, productName, type){
-  state.moveProductId = productId;
-  moveTitle.textContent = `Sản phẩm: ${productName}`;
-  mType.value = type;
-  mQty.value = "";
-  mNote.value = "";
-  openModal(moveModal);
+function resetForm(){
+  pid.value = "";
+  pname.value = "";
+  psku.value = "";
+  poem.value = "";
+  pcat.value = "";
+  pbrand.value = "";
+  punit.value = "";
+  pRetail.value = "0";
+  pWholesale.value = "0";
+  pdesc.value = "";
+  pimgurl.value = "";
+  pfile.value = "";
+  pactive.value = "true";
+
+  previewImg.dataset.src = "";
+  updatePreview(FALLBACK_IMG, true);
+
+  btnDel.hidden = true;
+}
+
+function fillForm(p){
+  pid.value = p.id || "";
+  pname.value = p.name || "";
+  psku.value = p.sku || "";
+  poem.value = p.oem || "";
+  pcat.value = p.category || "";
+  pbrand.value = p.brand || "";
+  punit.value = p.unit || "";
+  pRetail.value = String(Number(p.priceRetail||0));
+  pWholesale.value = String(Number(p.priceWholesale||0));
+  pdesc.value = p.desc || "";
+  pactive.value = (p.active === false) ? "false" : "true";
+
+  pimgurl.value = "";
+  pfile.value = "";
+
+  previewImg.dataset.src = p.imageUrl || "";
+  updatePreview(p.imageUrl || FALLBACK_IMG, !p.imageUrl);
+
+  btnDel.hidden = !S.isAdmin ? true : false;
+}
+
+async function saveProduct(){
+  const id = pid.value || rid();
+  const name = (pname.value||"").trim();
+  if (!name) return toastBad("Tên sản phẩm là bắt buộc.");
+
+  const rawSrc = (previewImg.dataset.src||"").trim() || (pimgurl.value||"").trim();
+
+  // upload to Drive only when it's dataUrl
+  let imageUrl = rawSrc || "";
+  try{
+    if (imageUrl.startsWith("data:image/")){
+      setChip("Uploading image...", "#f59e0b");
+      const up = await apiPost({
+        action: "upload_image_to_drive",
+        adminKey: S.adminKey,
+        file: { name: `p_${id}.jpg`, mime: "image/jpeg", dataUrl: imageUrl }
+      });
+      if (!up.ok) throw new Error(up.error || "Upload ảnh thất bại");
+      imageUrl = up.imageUrl;
+    }
+  } finally {
+    setChip("OK", "#22c55e");
+  }
+
+  const product = {
+    id,
+    sku: (psku.value||"").trim(),
+    name,
+    category: (pcat.value||"").trim(),
+    brand: (pbrand.value||"").trim(),
+    oem: (poem.value||"").trim(),
+    unit: (punit.value||"").trim(),
+    priceRetail: Number(pRetail.value||0),
+    priceWholesale: Number(pWholesale.value||0),
+    imageUrl: imageUrl || "",
+    desc: (pdesc.value||"").trim(),
+    active: (pactive.value === "true")
+  };
+
+  const res = await apiPost({ action:"upsert_product", adminKey: S.adminKey, product });
+  if (!res.ok) return toastBad(res.error || "Save failed");
+
+  await reloadAll();
+  pid.value = id;
+  btnDel.hidden = false;
+  toastOK("Đã lưu sản phẩm");
+  renderAll();
 }
 
 /* =========================
-   PREVIEW IMAGE
+   CSV Export/Import
+========================= */
+function exportCSV(){
+  const headers = [
+    "id","sku","name","category","brand","oem","unit","priceRetail","priceWholesale","imageUrl","desc","active"
+  ];
+
+  const lines = [];
+  lines.push(headers.join(","));
+
+  for(const p of S.products){
+    const row = headers.map(h => csvEscape(p[h]));
+    lines.push(row.join(","));
+  }
+
+  const blob = new Blob([lines.join("\n")], { type:"text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "products_export.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+
+  toastOK("Đã export CSV");
+}
+
+function parseCSV(text){
+  // simple CSV parser (supports quoted)
+  const rows = [];
+  let row = [];
+  let cur = "";
+  let inQuotes = false;
+
+  for (let i=0;i<text.length;i++){
+    const ch = text[i];
+    const next = text[i+1];
+
+    if (ch === '"' && inQuotes && next === '"'){
+      cur += '"';
+      i++;
+      continue;
+    }
+    if (ch === '"'){
+      inQuotes = !inQuotes;
+      continue;
+    }
+    if (!inQuotes && (ch === ",")){
+      row.push(cur);
+      cur = "";
+      continue;
+    }
+    if (!inQuotes && (ch === "\n" || ch === "\r")){
+      if (cur.length || row.length){
+        row.push(cur);
+        rows.push(row);
+      }
+      cur = "";
+      row = [];
+      // skip \r\n
+      if (ch === "\r" && next === "\n") i++;
+      continue;
+    }
+    cur += ch;
+  }
+  if (cur.length || row.length){
+    row.push(cur);
+    rows.push(row);
+  }
+  return rows;
+}
+
+async function importCSV(rows){
+  if (!rows.length) return toastBad("CSV rỗng.");
+
+  const headers = rows[0].map(x => (x||"").trim());
+  const need = ["name"]; // minimal required
+
+  for(const k of need){
+    if (!headers.includes(k)) return toastBad(`CSV thiếu cột: ${k}`);
+  }
+
+  const idx = (col)=>headers.indexOf(col);
+
+  const dataRows = rows.slice(1).filter(r => r.some(x => String(x||"").trim() !== ""));
+  if (!dataRows.length) return toastBad("CSV không có dữ liệu.");
+
+  setChip("Importing...", "#f59e0b");
+
+  // batch upsert sequential (safe)
+  let okCount = 0;
+  for(const r of dataRows){
+    const p = {
+      id: (r[idx("id")] || "").trim() || rid(),
+      sku: (r[idx("sku")] || "").trim(),
+      name: (r[idx("name")] || "").trim(),
+      category: (r[idx("category")] || "").trim(),
+      brand: (r[idx("brand")] || "").trim(),
+      oem: (r[idx("oem")] || "").trim(),
+      unit: (r[idx("unit")] || "").trim(),
+      priceRetail: Number((r[idx("priceRetail")] || "0").trim() || 0),
+      priceWholesale: Number((r[idx("priceWholesale")] || "0").trim() || 0),
+      imageUrl: (r[idx("imageUrl")] || "").trim(),
+      desc: (r[idx("desc")] || "").trim(),
+      active: ((r[idx("active")] || "true").trim().toLowerCase() !== "false")
+    };
+
+    if (!p.name) continue;
+
+    const res = await apiPost({ action:"upsert_product", adminKey:S.adminKey, product:p });
+    if (res.ok) okCount++;
+  }
+
+  await reloadAll();
+  renderAll();
+  setChip("OK", "#22c55e");
+  toastOK(`Import xong: ${okCount} sản phẩm`);
+}
+
+function csvEscape(v){
+  const s = String(v ?? "");
+  if (s.includes('"') || s.includes(",") || s.includes("\n") || s.includes("\r")){
+    return `"${s.replaceAll('"','""')}"`;
+  }
+  return s;
+}
+
+/* =========================
+   PREVIEW
 ========================= */
 function updatePreview(src, showHint){
-  imgPreview.src = src || FALLBACK_IMG;
-  previewHint.style.display = showHint ? "block" : "none";
+  previewImg.src = src || FALLBACK_IMG;
+  hint.style.display = showHint ? "block" : "none";
 }
 
 /* =========================
-   MODAL + TOAST
+   MODALS + TOAST
 ========================= */
-function openModal(modal){
-  modal.classList.add("open");
-  modal.setAttribute("aria-hidden","false");
+function openModal(m){
+  m.classList.add("open");
+  m.setAttribute("aria-hidden","false");
 }
 function closeAllModals(){
-  document.querySelectorAll(".modal").forEach(m => {
+  document.querySelectorAll(".modal").forEach(m=>{
     m.classList.remove("open");
     m.setAttribute("aria-hidden","true");
   });
 }
-let toastTimer=null;
+
+let toastTimer = null;
 function toastOK(msg){ showToast(msg,true); }
 function toastBad(msg){ showToast(msg,false); }
 function showToast(msg, ok){
-  toast.hidden=false;
-  toastText.textContent=msg;
+  toast.hidden = false;
+  toastText.textContent = msg;
   toast.querySelector("i").className = ok ? "fa-solid fa-circle-check" : "fa-solid fa-triangle-exclamation";
-  toast.style.background = ok ? "#111827" : "#7f1d1d";
+  toast.style.background = ok ? "#0b1220" : "#7f1d1d";
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>toast.hidden=true, 2200);
+  toastTimer = setTimeout(()=>toast.hidden=true, 2200);
 }
 
 /* =========================
-   STOCK CALC
+   API
 ========================= */
-function rebuildStock(){
-  const map = new Map();
-  for (const m of state.movements){
-    const sign = m.type === "IN" ? 1 : -1;
-    map.set(m.productId, (map.get(m.productId) || 0) + sign * Number(m.qty || 0));
+async function apiGet(action){
+  try{
+    const url = API_URL + "?action=" + encodeURIComponent(action);
+    const r = await fetch(url, { method:"GET" });
+    return await r.json();
+  }catch(e){
+    return { ok:false, error:String(e.message||e) };
   }
-  state.stock = map;
 }
-function stockOf(id){ return state.stock.get(id) || 0; }
+
+async function apiPost(payload){
+  try{
+    const r = await fetch(API_URL, {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(payload)
+    });
+    return await r.json();
+  }catch(e){
+    return { ok:false, error:String(e.message||e) };
+  }
+}
 
 /* =========================
    IMAGE COMPRESS
 ========================= */
-async function fileToDataUrlCompressed(file, maxSize=900, quality=0.86){
-  const dataUrl = await new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(String(r.result));
-    r.onerror = rej;
-    r.readAsDataURL(file);
+async function fileToDataUrlCompressed(file, maxSize=1000, quality=0.86){
+  const dataUrl = await new Promise((res, rej)=>{
+    const fr = new FileReader();
+    fr.onload = ()=>res(String(fr.result));
+    fr.onerror = rej;
+    fr.readAsDataURL(file);
   });
 
-  const img = await new Promise((res, rej) => {
+  const img = await new Promise((res, rej)=>{
     const im = new Image();
-    im.onload = () => res(im);
+    im.onload = ()=>res(im);
     im.onerror = rej;
     im.src = dataUrl;
   });
@@ -601,130 +954,12 @@ async function fileToDataUrlCompressed(file, maxSize=900, quality=0.86){
   const nh = Math.round(h * scale);
 
   const canvas = document.createElement("canvas");
-  canvas.width = nw; canvas.height = nh;
+  canvas.width = nw;
+  canvas.height = nh;
   const ctx = canvas.getContext("2d");
   ctx.drawImage(img, 0, 0, nw, nh);
 
   return canvas.toDataURL("image/jpeg", quality);
-}
-
-/* =========================
-   INDEXEDDB
-========================= */
-function dbInit(){
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const d = req.result;
-
-      if (!d.objectStoreNames.contains("products")){
-        const s = d.createObjectStore("products", {keyPath:"id"});
-        s.createIndex("by_createdAt","createdAt",{unique:false});
-        s.createIndex("by_category","category",{unique:false});
-        s.createIndex("by_brand","brand",{unique:false});
-        s.createIndex("by_oem","oem",{unique:false});
-      }
-
-      if (!d.objectStoreNames.contains("movements")){
-        const s = d.createObjectStore("movements", {keyPath:"id"});
-        s.createIndex("by_productId","productId",{unique:false});
-        s.createIndex("by_at","at",{unique:false});
-      }
-
-      if (!d.objectStoreNames.contains("meta")){
-        d.createObjectStore("meta", {keyPath:"key"});
-      }
-    };
-
-    req.onsuccess = () => { db = req.result; resolve(); };
-    req.onerror = () => reject(req.error);
-  });
-}
-
-function store(name, mode="readonly"){
-  return db.transaction(name, mode).objectStore(name);
-}
-function dbGetAll(name){
-  return new Promise((resolve, reject) => {
-    const r = store(name).getAll();
-    r.onsuccess = () => resolve(r.result || []);
-    r.onerror = () => reject(r.error);
-  });
-}
-function dbPut(name, obj){
-  return new Promise((resolve, reject) => {
-    const r = store(name,"readwrite").put(obj);
-    r.onsuccess = () => resolve();
-    r.onerror = () => reject(r.error);
-  });
-}
-function dbDelete(name, key){
-  return new Promise((resolve, reject) => {
-    const r = store(name,"readwrite").delete(key);
-    r.onsuccess = () => resolve();
-    r.onerror = () => reject(r.error);
-  });
-}
-function dbGetMeta(key){
-  return new Promise((resolve, reject) => {
-    const r = store("meta").get(key);
-    r.onsuccess = () => resolve(r.result?.value);
-    r.onerror = () => reject(r.error);
-  });
-}
-function dbSetMeta(key, value){
-  return new Promise((resolve, reject) => {
-    const r = store("meta","readwrite").put({key,value});
-    r.onsuccess = () => resolve();
-    r.onerror = () => reject(r.error);
-  });
-}
-
-async function reloadAll(){
-  state.products = await dbGetAll("products");
-  state.movements = await dbGetAll("movements");
-  rebuildStock();
-
-  // auto show delete if editing
-  btnDelete.hidden = !(state.isAdmin && pId.value);
-
-  // keep shop search synced if shop mode
-  syncModeUI();
-}
-
-/* =========================
-   SEED (demo data once)
-========================= */
-async function ensureSeedOnce(){
-  const seeded = await dbGetMeta("seeded");
-  if (seeded) return;
-
-  const now = Date.now();
-  const demo = [
-    mk("Lọc nhớt giấy Sakura EO-88990","Lọc nhớt","Sakura","OEM-EO88990", 75000, "cái", "Hàng chính hãng", now-80000),
-    mk("Lọc gió Toyota 17801-0L040","Két gió","Toyota","OEM-17801-0L040", 120000, "cái", "Chạy bền", now-70000),
-    mk("Gạt mưa Bosch Aerotwin","Gạt mưa","Bosch","OEM-BOSCH-AERO", 180000, "bộ", "Êm, sạch", now-60000),
-  ];
-
-  for (const p of demo) await dbPut("products", p);
-
-  // tồn ban đầu
-  await dbPut("movements",{id:rid(), productId:demo[0].id, type:"IN", qty:40, note:"Tồn đầu", at:now-50000});
-  await dbPut("movements",{id:rid(), productId:demo[1].id, type:"IN", qty:15, note:"Tồn đầu", at:now-50000});
-  await dbPut("movements",{id:rid(), productId:demo[2].id, type:"IN", qty:10, note:"Tồn đầu", at:now-50000});
-
-  await dbSetMeta("seeded", true);
-}
-
-function mk(name, category, brand, oem, price, unit, note, createdAt){
-  return {
-    id: rid(),
-    name, category, brand, oem,
-    price, unit,
-    note,
-    image: FALLBACK_IMG,
-    createdAt
-  };
 }
 
 /* =========================
@@ -738,6 +973,15 @@ function rid(){
   }
   return String(Date.now()) + Math.random().toString(16).slice(2);
 }
+
+function uniq(arr){ return [...new Set(arr)]; }
+
+function locale(a,b){ return String(a||"").localeCompare(String(b||""),"vi"); }
+
+function formatVND(n){
+  return Number(n||0).toLocaleString("vi-VN") + "đ";
+}
+
 function esc(s){
   return String(s ?? "")
     .replaceAll("&","&amp;")
@@ -747,9 +991,3 @@ function esc(s){
     .replaceAll("'","&#039;");
 }
 function escAttr(s){ return esc(s).replaceAll("\n"," "); }
-function uniq(arr){ return [...new Set(arr)]; }
-function locale(a,b){ return String(a||"").localeCompare(String(b||""),"vi"); }
-function formatVND(n){
-  const v = Number(n||0);
-  return v.toLocaleString("vi-VN") + "đ";
-}
