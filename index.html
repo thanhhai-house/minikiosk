@@ -3,418 +3,315 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PAS Sakura - Shop</title>
+  <title>Quản lý kho</title>
 
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
-  <!-- QUAN TRỌNG: đúng tên file -->
-  <link rel="stylesheet" href="styles.css?v=3" />
+  <link rel="stylesheet" href="styles.css?v=4" />
 </head>
 <body>
-
-  <!-- TOP STRIP -->
-  <div class="topstrip">
-    <div class="container row between center">
-      <div class="topstrip-left">
-        Hotline đặt hàng: <b>0348 074 177</b>
-        <span class="dot">•</span>
-        Hotline góp ý: <b>0348 074 177</b> (Mr Hải)
-        <span class="dot">•</span>
-        Thời gian làm việc: <b>8:00 - 16:30 (T2 - T7)</b>
+  <!-- TOP APP BAR -->
+  <header class="appbar">
+    <div class="container appbar-inner">
+      <div class="brand">
+        <div class="brand-badge">K</div>
+        <div class="brand-text">
+          <div class="brand-title">Quản lý kho</div>
+          <div class="brand-sub">IN/OUT • OEM • Báo giá • Local DB (IndexedDB)</div>
+        </div>
       </div>
 
-      <button id="btnOpenAdmin" class="btn btn-ghost btn-sm" type="button">
-        <i class="fa-solid fa-user-shield"></i> Admin
-      </button>
-    </div>
-  </div>
-
-  <!-- HEADER -->
-  <header class="header">
-    <div class="container header-inner">
-      <a class="logo" href="#">
-        <div class="logo-badge"><i class="fa-solid fa-gear"></i></div>
-        <div class="logo-text">
-          <div class="logo-top">PAS - YOUR GENUINE SUPPLIER</div>
-          <div class="logo-bottom">SAKURA</div>
-        </div>
-      </a>
-
-      <div class="searchbar">
-        <select id="categorySelect" class="control select">
-          <option value="all">Chọn danh mục</option>
-        </select>
-
-        <div class="searchbox">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input id="searchInput" class="control" placeholder="Tìm kiếm..." />
-        </div>
-
-        <button id="searchBtn" class="btn btn-primary" type="button">
-          <i class="fa-solid fa-magnifying-glass"></i>
+      <div class="appbar-actions">
+        <button id="btnGoShop" class="btn btn-ghost" type="button">
+          <i class="fa-solid fa-store"></i> Cửa hàng
         </button>
 
-        <div class="quicklinks" id="quickLinks">
-          Két nước • Két gió • Gạt mưa • Bơm xăng
-        </div>
-      </div>
+        <button id="btnRefresh" class="btn btn-ghost" type="button">
+          <i class="fa-solid fa-rotate"></i> Làm mới
+        </button>
 
-      <div class="rightbox">
-        <div class="mini-card">
-          <i class="fa-regular fa-circle-user"></i>
-          <div>
-            <div class="mini-top">Khách</div>
-            <div class="mini-sub">Tài khoản</div>
-          </div>
-        </div>
+        <button id="btnSnapshot" class="btn btn-primary" type="button">
+          <i class="fa-solid fa-camera"></i> Chụp TồnKho
+        </button>
 
-        <div class="mini-card cart">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <div>
-            <div class="mini-top">Giỏ hàng</div>
-            <div class="mini-sub"><span id="cartCount">0</span> sp</div>
-          </div>
-          <span class="badge" id="cartBadge">0</span>
-        </div>
+        <button id="btnQuote" class="btn btn-primary" type="button">
+          <i class="fa-solid fa-file-invoice"></i> In báo giá
+        </button>
+
+        <button id="btnOpenAdmin" class="btn btn-dark" type="button">
+          <i class="fa-solid fa-user-shield"></i> Admin
+        </button>
+
+        <button class="btn btn-icon" id="btnMenu" type="button" title="Menu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- NAV -->
-  <nav class="nav">
-    <div class="container nav-inner">
-      <button class="btn btn-danger nav-cat" id="btnToggleSidebar" type="button">
-        <i class="fa-solid fa-bars"></i> DANH MỤC SẢN PHẨM
-      </button>
-
-      <a class="navlink active" href="#">Trang chủ</a>
-      <a class="navlink" href="#">Sản phẩm <i class="fa-solid fa-caret-down"></i></a>
-      <a class="navlink" href="#">Khuyến mãi Hot</a>
-      <a class="navlink" href="#">Catalog <i class="fa-solid fa-caret-down"></i></a>
-      <a class="navlink" href="#">Liên hệ</a>
-      <a class="navlink" href="#">Về chúng tôi</a>
-      <a class="navlink" href="#">Tin tức</a>
-    </div>
-  </nav>
-
-  <!-- PAGE -->
-  <main class="container page">
-    <!-- LEFT -->
-    <aside class="sidebar" id="sidebar">
-      <div class="side-title">
-        <i class="fa-solid fa-list"></i> DANH MỤC SẢN PHẨM
+  <!-- SHOP VIEW (KHÁCH) -->
+  <section id="shopView" class="container shop" hidden>
+    <div class="shop-head">
+      <h2>Cửa hàng</h2>
+      <div class="shop-tools">
+        <div class="inputwrap">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="shopSearch" class="control" placeholder="Tìm theo tên / OEM / thương hiệu..." />
+        </div>
+        <select id="shopCat" class="control select">
+          <option value="">Tất cả loại</option>
+        </select>
       </div>
-      <div class="side-body">
-        <ul class="catlist" id="catList"></ul>
+    </div>
 
-        <div class="side-block">
-          <div class="side-block-title">THƯƠNG HIỆU</div>
-          <div class="tags" id="brandTags"></div>
+    <div id="shopGrid" class="shop-grid"></div>
+    <div id="shopEmpty" class="empty" hidden>
+      <i class="fa-regular fa-face-frown"></i>
+      <div>Không có sản phẩm.</div>
+    </div>
+  </section>
+
+  <!-- ADMIN DASHBOARD -->
+  <main id="adminView" class="container dash">
+    <!-- LEFT CARD -->
+    <aside class="card formcard">
+      <div class="card-head">
+        <div class="card-title">Nhập sản phẩm</div>
+        <div class="pill" id="adminPill">KHÁCH</div>
+      </div>
+
+      <div class="card-body">
+        <input id="pId" type="hidden" />
+
+        <div class="grid2">
+          <div class="field full">
+            <label>Tên sản phẩm *</label>
+            <input id="pName" class="control" placeholder="VD: Lọc dầu Toyota..." />
+          </div>
+
+          <div class="field">
+            <label>Ảnh (URL)</label>
+            <input id="pImageUrl" class="control" placeholder="https://..." />
+          </div>
+
+          <div class="field">
+            <label>Upload ảnh</label>
+            <input id="pImageFile" type="file" accept="image/*" capture="environment" hidden />
+            <button id="btnPickImage" class="btn btn-ghost w100" type="button">
+              <i class="fa-regular fa-image"></i> Chọn ảnh (điện thoại/máy)
+            </button>
+          </div>
+
+          <div class="field">
+            <label>Loại</label>
+            <input id="pCategory" class="control" placeholder="VD: Lọc / Dầu / Phụ tùng..." />
+          </div>
+
+          <div class="field">
+            <label>Thương hiệu</label>
+            <input id="pBrand" class="control" placeholder="VD: Toyota / Bosch..." />
+          </div>
+
+          <div class="field">
+            <label>Giá</label>
+            <input id="pPrice" class="control" type="number" min="0" step="1000" value="0" />
+          </div>
+
+          <div class="field">
+            <label>Đơn vị</label>
+            <input id="pUnit" class="control" placeholder="cái / bộ / lít..." />
+          </div>
+
+          <div class="field">
+            <label>Tồn ban đầu</label>
+            <input id="pInitStock" class="control" type="number" min="0" step="1" value="0" />
+          </div>
+
+          <div class="field">
+            <label>OEM (mã nhóm thay thế)</label>
+            <input id="pOEM" class="control" placeholder="VD: OEM-ABC123" />
+          </div>
+
+          <div class="field full">
+            <label>Ghi chú</label>
+            <input id="pNote" class="control" placeholder="..." />
+          </div>
+        </div>
+
+        <div class="preview">
+          <div class="preview-title">Preview ảnh</div>
+          <div class="preview-box">
+            <img id="imgPreview" alt="preview" />
+            <div id="previewHint" class="preview-hint">Nhập URL ảnh hoặc chọn file để xem preview.</div>
+          </div>
+        </div>
+
+        <div class="row gap mt">
+          <button id="btnSave" class="btn btn-primary" type="button">
+            <i class="fa-solid fa-plus"></i> Thêm / Lưu
+          </button>
+          <button id="btnReset" class="btn btn-ghost" type="button">
+            <i class="fa-solid fa-rotate-left"></i> Xoá form
+          </button>
+          <button id="btnDelete" class="btn btn-danger" type="button" hidden>
+            <i class="fa-solid fa-trash"></i> Xoá
+          </button>
+        </div>
+
+        <div class="muted mt small">
+          * Khách chỉ xem. Admin mới thêm/sửa/xoá/nhập/xuất. Dữ liệu lưu trong trình duyệt (IndexedDB).
         </div>
       </div>
     </aside>
 
-    <!-- RIGHT -->
-    <section class="content">
-      <div class="crumb">
-        <span>Trang chủ</span>
-        <i class="fa-solid fa-chevron-right"></i>
-        <span id="crumbCategory" class="crumb-active">Lọc nhớt</span>
-      </div>
-
-      <div class="content-head">
-        <h1 id="pageTitle">Lọc nhớt</h1>
-
-        <div class="sortbox">
-          <span>Sắp xếp:</span>
-          <select id="sortSelect" class="control select sm">
-            <option value="newest">Thứ tự (mới nhất)</option>
-            <option value="az">Tên A → Z</option>
-            <option value="za">Tên Z → A</option>
-            <option value="stockDesc">Tồn giảm dần</option>
-            <option value="stockAsc">Tồn tăng dần</option>
-          </select>
+    <!-- RIGHT CARD -->
+    <section class="card listcard">
+      <div class="card-head">
+        <div class="card-title">Danh sách sản phẩm</div>
+        <div class="righttools">
+          <button id="btnClearFilters" class="btn btn-ghost btn-sm" type="button">
+            <i class="fa-solid fa-filter-circle-xmark"></i> Bỏ lọc
+          </button>
         </div>
       </div>
 
-      <div class="grid" id="productGrid"></div>
+      <div class="card-body">
+        <div class="row gap">
+          <div class="inputwrap grow">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="qSearch" class="control" placeholder="Tìm theo tên / OEM / thương hiệu..." />
+          </div>
+        </div>
 
-      <div class="empty" id="emptyState" hidden>
-        <i class="fa-regular fa-face-frown"></i>
-        <div>Không có sản phẩm phù hợp.</div>
+        <div class="filters">
+          <div class="filter">
+            <div class="filter-label">Lọc theo Loại</div>
+            <select id="fCategory" class="control select sm">
+              <option value="">Tất cả</option>
+            </select>
+          </div>
+
+          <div class="filter">
+            <div class="filter-label">Lọc theo Thương hiệu</div>
+            <select id="fBrand" class="control select sm">
+              <option value="">Tất cả</option>
+            </select>
+          </div>
+
+          <div class="filter">
+            <div class="filter-label">Sắp xếp</div>
+            <select id="fSort" class="control select sm">
+              <option value="newest">Mới nhất</option>
+              <option value="az">Tên A→Z</option>
+              <option value="za">Tên Z→A</option>
+              <option value="stockDesc">Tồn giảm</option>
+              <option value="stockAsc">Tồn tăng</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="tablewrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:42px">Chọn</th>
+                <th style="width:70px">Ảnh</th>
+                <th>Tên</th>
+                <th style="width:160px">Loại</th>
+                <th style="width:160px">Thương hiệu</th>
+                <th style="width:90px">Tồn</th>
+                <th style="width:110px">Giá</th>
+                <th style="width:170px">Chi tiết</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div id="empty" class="empty" hidden>
+          <i class="fa-regular fa-face-frown"></i>
+          <div>Chưa có sản phẩm.</div>
+        </div>
+
+        <div class="footerbar">
+          <div class="muted small">VÕ — © 2025 HẢI VÕ —</div>
+        </div>
       </div>
     </section>
   </main>
 
-  <!-- FLOAT HOTLINE -->
-  <a class="float-hotline" href="tel:0348074177">
-    <i class="fa-solid fa-phone"></i> 0348 074 177
-  </a>
-
-  <!-- MODAL: ADMIN -->
+  <!-- MODAL: ADMIN LOGIN -->
   <div class="modal" id="adminModal" aria-hidden="true">
     <div class="backdrop" data-close="1"></div>
     <div class="modal-card">
       <div class="modal-head">
-        <div class="modal-title">
-          <i class="fa-solid fa-user-shield"></i> Admin Panel
-        </div>
-        <button class="iconbtn" data-close="1" type="button">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
+        <div class="modal-title"><i class="fa-solid fa-user-shield"></i> Admin</div>
+        <button class="iconbtn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="modal-body">
         <div class="note">
-          Web GitHub Pages là tĩnh → admin chỉ là chế độ UI. Đổi mật khẩu trong <b>app.js</b> (ADMIN_PASSWORD).
+          GitHub Pages là web tĩnh → admin chỉ là “chế độ UI”. Đổi mật khẩu ở <b>app.js</b> (ADMIN_PASSWORD).
         </div>
 
-        <div class="formgrid">
-          <div class="field full">
-            <label>Mật khẩu admin</label>
-            <div class="inputwrap">
-              <i class="fa-solid fa-key"></i>
-              <input id="adminPass" class="control" type="password" placeholder="Nhập mật khẩu..." />
-            </div>
-          </div>
+        <div class="mt inputwrap">
+          <i class="fa-solid fa-key"></i>
+          <input id="adminPass" class="control" type="password" placeholder="Nhập mật khẩu..." />
         </div>
 
-        <div class="row gap">
-          <button id="adminLoginBtn" class="btn btn-primary" type="button">
+        <div class="row gap mt">
+          <button id="btnLogin" class="btn btn-primary" type="button">
             <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
           </button>
-          <button id="adminLogoutBtn" class="btn btn-danger" type="button" hidden>
+
+          <button id="btnLogout" class="btn btn-danger" type="button" hidden>
             <i class="fa-solid fa-right-from-bracket"></i> Đăng xuất
           </button>
 
-          <button id="btnOpenInventory" class="btn" type="button">
-            <i class="fa-solid fa-warehouse"></i> Kho (Nhập/Xuất)
-          </button>
-
-          <button id="btnOpenProductModal" class="btn btn-primary" type="button">
-            <i class="fa-solid fa-plus"></i> Thêm sản phẩm
+          <button id="btnOnlyView" class="btn btn-ghost" type="button">
+            <i class="fa-solid fa-eye"></i> Chế độ khách
           </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: PRODUCT -->
-  <div class="modal" id="productModal" aria-hidden="true">
+  <!-- MODAL: MOVEMENT (IN/OUT) -->
+  <div class="modal" id="moveModal" aria-hidden="true">
     <div class="backdrop" data-close="1"></div>
-    <div class="modal-card wide">
+    <div class="modal-card">
       <div class="modal-head">
-        <div class="modal-title">
-          <i class="fa-solid fa-box"></i> <span id="pmTitle">Thêm sản phẩm</span>
-        </div>
-        <button class="iconbtn" data-close="1" type="button">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="modal-body">
-        <div class="two-col">
-          <div>
-            <input id="pId" type="hidden" />
-
-            <div class="formgrid">
-              <div class="field">
-                <label>Tên sản phẩm *</label>
-                <input id="pName" class="control" placeholder="VD: Lọc nhớt giấy Sakura EO-..." />
-              </div>
-              <div class="field">
-                <label>Mã (SKU)</label>
-                <input id="pSku" class="control" placeholder="VD: EO-88990" />
-              </div>
-              <div class="field">
-                <label>Danh mục *</label>
-                <select id="pCategory" class="control select"></select>
-              </div>
-              <div class="field">
-                <label>Thương hiệu</label>
-                <input id="pBrand" class="control" placeholder="VD: Sakura" />
-              </div>
-              <div class="field full">
-                <label>Mô tả ngắn</label>
-                <input id="pDesc" class="control" placeholder="VD: Hàng chính hãng, bền..." />
-              </div>
-
-              <div class="field full">
-                <label>Ảnh sản phẩm (upload + preview)</label>
-                <div class="row gap">
-                  <input id="pImageFile" type="file" accept="image/*" capture="environment" hidden />
-                  <button id="btnPickImage" class="btn" type="button">
-                    <i class="fa-regular fa-image"></i> Chọn ảnh
-                  </button>
-                  <button id="btnUseUrl" class="btn btn-ghost" type="button">
-                    <i class="fa-solid fa-link"></i> Dùng URL
-                  </button>
-                </div>
-
-                <div id="urlBox" class="urlbox" hidden>
-                  <div class="inputwrap">
-                    <i class="fa-solid fa-link"></i>
-                    <input id="pImageUrl" class="control" placeholder="https://..." />
-                  </div>
-                </div>
-
-                <div class="preview">
-                  <div class="preview-title">
-                    <i class="fa-solid fa-eye"></i> Preview trước khi lưu
-                  </div>
-                  <div class="preview-box">
-                    <img id="pImagePreview" alt="preview" />
-                  </div>
-                  <div class="muted">Tip: ảnh ~300–800px cho nhẹ.</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="row gap">
-              <button id="saveProductBtn" class="btn btn-primary" type="button">
-                <i class="fa-solid fa-floppy-disk"></i> Lưu
-              </button>
-              <button id="deleteProductBtn" class="btn btn-danger" type="button" hidden>
-                <i class="fa-solid fa-trash"></i> Xoá
-              </button>
-              <button id="resetFormBtn" class="btn" type="button">
-                <i class="fa-solid fa-rotate-left"></i> Xoá form
-              </button>
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title"><i class="fa-solid fa-bolt"></i> Xem nhanh</div>
-            <div class="qv">
-              <div class="qv-img"><img id="qvImg" alt="qv" /></div>
-              <div class="qv-body">
-                <div class="qv-name" id="qvName">Tên sản phẩm</div>
-                <div class="qv-meta" id="qvMeta">Danh mục • Thương hiệu • SKU</div>
-                <div class="qv-desc" id="qvDesc">Mô tả ngắn</div>
-                <div class="qv-stock"><i class="fa-solid fa-warehouse"></i> Tồn: <b id="qvStock">0</b></div>
-              </div>
-            </div>
-
-            <div class="note mt">
-              Nhập/Xuất tồn kho ở cửa sổ <b>Kho</b>.
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: INVENTORY -->
-  <div class="modal" id="inventoryModal" aria-hidden="true">
-    <div class="backdrop" data-close="1"></div>
-    <div class="modal-card wide">
-      <div class="modal-head">
-        <div class="modal-title"><i class="fa-solid fa-warehouse"></i> Kho: Nhập / Xuất</div>
+        <div class="modal-title"><i class="fa-solid fa-warehouse"></i> Nhập / Xuất kho</div>
         <button class="iconbtn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="modal-body">
-        <div class="tabs">
-          <button class="tab active" data-tab="create" type="button">Tạo phiếu</button>
-          <button class="tab" data-tab="history" type="button">Lịch sử</button>
-        </div>
+        <div class="muted small" id="moveTitle">Sản phẩm: ...</div>
 
-        <div class="tabpane active" id="tab-create">
-          <div class="formgrid">
-            <div class="field">
-              <label>Loại</label>
-              <select id="mType" class="control select">
-                <option value="IN">Nhập kho</option>
-                <option value="OUT">Xuất kho</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Sản phẩm</label>
-              <select id="mProduct" class="control select"></select>
-            </div>
-            <div class="field">
-              <label>Số lượng *</label>
-              <input id="mQty" class="control" type="number" min="1" step="1" placeholder="VD: 10" />
-            </div>
-            <div class="field full">
-              <label>Ghi chú</label>
-              <input id="mNote" class="control" placeholder="VD: Nhập hàng đợt 1..." />
-            </div>
+        <div class="grid2 mt">
+          <div class="field">
+            <label>Loại</label>
+            <select id="mType" class="control select">
+              <option value="IN">Nhập</option>
+              <option value="OUT">Xuất</option>
+            </select>
           </div>
 
-          <div class="row gap">
-            <button id="mSave" class="btn btn-primary" type="button">
-              <i class="fa-solid fa-floppy-disk"></i> Lưu phiếu
-            </button>
+          <div class="field">
+            <label>Số lượng *</label>
+            <input id="mQty" class="control" type="number" min="1" step="1" placeholder="VD: 10" />
           </div>
 
-          <div class="tablehead">
-            <b>Bảng tồn</b>
-            <div class="inputwrap sm">
-              <i class="fa-solid fa-filter"></i>
-              <input id="invFilter" class="control" placeholder="Lọc nhanh..." />
-            </div>
-          </div>
-
-          <div class="tablewrap">
-            <table class="table">
-              <thead>
-              <tr>
-                <th>Sản phẩm</th><th>SKU</th><th>Danh mục</th><th>Tồn</th>
-              </tr>
-              </thead>
-              <tbody id="invTableBody"></tbody>
-            </table>
+          <div class="field full">
+            <label>Ghi chú</label>
+            <input id="mNote" class="control" placeholder="VD: Nhập hàng đợt 1..." />
           </div>
         </div>
 
-        <div class="tabpane" id="tab-history">
-          <div class="tablehead">
-            <b>Lịch sử phiếu</b>
-            <div class="inputwrap sm">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input id="hisFilter" class="control" placeholder="Lọc theo tên / sku / note..." />
-            </div>
-          </div>
-          <div id="historyList" class="history"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: VIEW -->
-  <div class="modal" id="viewModal" aria-hidden="true">
-    <div class="backdrop" data-close="1"></div>
-    <div class="modal-card wide">
-      <div class="modal-head">
-        <div class="modal-title"><i class="fa-regular fa-eye"></i> Chi tiết nhanh</div>
-        <button class="iconbtn" data-close="1" type="button"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-
-      <div class="modal-body">
-        <div class="view">
-          <div class="view-img"><img id="vImg" alt="view"/></div>
-          <div class="view-info">
-            <div class="view-title" id="vName">Tên</div>
-            <div class="view-meta" id="vMeta">meta</div>
-            <div class="view-desc" id="vDesc">desc</div>
-            <div class="view-stock"><i class="fa-solid fa-warehouse"></i> Tồn: <b id="vStock">0</b></div>
-
-            <div class="row gap">
-              <button id="btnEditFromView" class="btn btn-primary" type="button">
-                <i class="fa-solid fa-pen"></i> Sửa (Admin)
-              </button>
-              <button id="btnGoInventoryFromView" class="btn" type="button">
-                <i class="fa-solid fa-warehouse"></i> Kho
-              </button>
-              <button id="btnAddToCart" class="btn" type="button">
-                <i class="fa-solid fa-cart-plus"></i> Thêm giỏ (demo)
-              </button>
-            </div>
-
-            <div class="muted">Khách chỉ xem. Admin mới sửa / nhập xuất.</div>
-          </div>
+        <div class="row gap mt">
+          <button id="btnSaveMove" class="btn btn-primary" type="button">
+            <i class="fa-solid fa-floppy-disk"></i> Lưu
+          </button>
         </div>
       </div>
     </div>
@@ -426,6 +323,6 @@
     <span id="toastText">OK</span>
   </div>
 
-  <script defer src="app.js?v=3"></script>
+  <script defer src="app.js?v=4"></script>
 </body>
 </html>
