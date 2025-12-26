@@ -33,7 +33,7 @@
 
     <div class="status" id="status"></div>
 
-    <!-- KHO -->
+    <!-- INVENTORY -->
     <section class="panel" id="tab-inventory">
       <div class="panel-head">
         <div class="panel-title">Tra cứu hàng</div>
@@ -65,7 +65,7 @@
       </div>
     </section>
 
-    <!-- THÊM/SỬA -->
+    <!-- EDIT -->
     <section class="panel hidden" id="tab-edit">
       <div class="panel-title">Thêm / Cập nhật hàng</div>
 
@@ -124,13 +124,13 @@
           <button id="btnUploadImg" class="btn">Upload ảnh</button>
           <button id="btnViewImg" class="btn btn-secondary">Xem preview</button>
         </div>
-        <div class="hint">Ảnh sẽ lưu vào Google Drive folder bạn cấu hình trong Apps Script.</div>
+        <div class="hint">Ảnh lưu vào Google Drive folder cấu hình trong Apps Script.</div>
       </div>
 
       <div class="card">
         <div class="card-title">Nhập kho nhanh</div>
         <div class="row">
-          <input id="in_id" class="input grow" placeholder="ID hàng" />
+          <input id="in_id" class="input grow" placeholder="ID hàng (SP001)" />
           <input id="in_qty" class="input" type="number" step="1" value="1" />
           <input id="in_note" class="input grow" placeholder="Ghi chú" />
           <button id="btnStockIn" class="btn btn-secondary">Nhập kho</button>
@@ -138,7 +138,7 @@
       </div>
     </section>
 
-    <!-- BÁN -->
+    <!-- SALE -->
     <section class="panel hidden" id="tab-sale">
       <div class="panel-title">Tạo đơn bán / xuất kho</div>
 
@@ -164,7 +164,7 @@
       <div class="card">
         <div class="card-title">Thêm dòng hàng</div>
         <div class="row">
-          <input id="l_id" class="input grow" placeholder="ID hàng (VD: SP001)" />
+          <input id="l_id" class="input grow" placeholder="ID hàng (SP001)" />
           <input id="l_qty" class="input" type="number" step="1" value="1" />
           <input id="l_price" class="input" type="number" step="1000" placeholder="Giá (bỏ trống dùng giá mặc định)" />
           <button id="btnAddLine" class="btn">Thêm</button>
@@ -191,7 +191,7 @@
       </div>
     </section>
 
-    <!-- LỊCH SỬ -->
+    <!-- HISTORY -->
     <section class="panel hidden" id="tab-history">
       <div class="panel-head">
         <div class="panel-title">Lịch sử giao dịch</div>
