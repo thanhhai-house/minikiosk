@@ -1,993 +1,626 @@
-/* =========================
-   CONFIG — DÁN URL WEB APP /exec Ở ĐÂY
-========================= */
-const API_URL = "https://script.google.com/macros/s/AKfycbyVyL-CA1zgK0DyGkD6GJel8j13xCy5tAKKk5FELGRdYo6BGyrD5p0hrE3hNkWBzF8/exec";
+// ====================== CONFIG ======================
+const API_URL = "https://script.google.com/macros/s/AKfycbydN15dpCZPJ3XdvPBUh2r2G_T7sjGQOod1-xBnSYo-4wxQo-MHiPmsduvH0mzM0Q/exec"; // <-- DÁN URL WEB APP
 
-// Mật khẩu bật chế độ Admin (UI)
-const ADMIN_PASSWORD = "123456";
+let TOKEN = localStorage.getItem("token") || "";
+let ROLE = "guest";
 
-// Fallback image
-const FALLBACK_IMG =
-  "data:image/svg+xml;charset=utf-8," +
-  encodeURIComponent(`
-  <svg xmlns="http://www.w3.org/2000/svg" width="900" height="900">
-    <rect width="100%" height="100%" fill="#f3f4f6"/>
-    <circle cx="450" cy="380" r="150" fill="#e5e7eb"/>
-    <text x="50%" y="62%" dominant-baseline="middle" text-anchor="middle"
-      font-family="Arial" font-size="28" font-weight="700" fill="#6b7280">No Image</text>
-  </svg>`);
+const $ = (id) => document.getElementById(id);
 
-/* =========================
-   STATE
-========================= */
-const S = {
-  isAdmin: localStorage.getItem("is_admin_v1") === "1",
-  adminKey: localStorage.getItem("admin_key_v1") || "",
-  mode: localStorage.getItem("mode_v1") || "dashboard", // dashboard | shop
+let ALL = [];
+let CURRENT = null;
 
-  products: [],
-  moves: [],
-  warehouses: [],
+// ====================== CART ======================
+let CART = JSON.parse(localStorage.getItem("cart") || "[]"); // [{product_id,name,price,qty}]
+function saveCart(){ localStorage.setItem("cart", JSON.stringify(CART)); updateCartCount(); }
+function updateCartCount(){ $("cartCount").textContent = CART.reduce((s,i)=>s+i.qty,0); }
 
-  // stock maps
-  stockTotal: new Map(),            // productId -> qty
-  stockByWH: new Map(),             // `${wh}|${pid}` -> qty
-
-  // filters
-  filters: { q:"", cat:"", brand:"", sort:"newest" },
-  globalWarehouse: "", // "" means all
-
-  // shop filters
-  shop: { q:"", cat:"", brand:"" },
-
-  // move context
-  moveProductId: null
-};
-
-/* =========================
-   DOM
-========================= */
-const $ = (id)=>document.getElementById(id);
-
-const pillRole = $("pillRole");
-const chipOnline = $("chipOnline");
-
-const btnPing = $("btnPing");
-const btnReload = $("btnReload");
-const btnExportCSV = $("btnExportCSV");
-const csvFile = $("csvFile");
-const btnAdmin = $("btnAdmin");
-
-const btnModeDashboard = $("btnModeDashboard");
-const btnModeShop = $("btnModeShop");
-
-const globalWarehouse = $("globalWarehouse");
-
-const statProducts = $("statProducts");
-const statMoves = $("statMoves");
-const statWarehouses = $("statWarehouses");
-
-const shopView = $("shopView");
-const dashboardView = $("dashboardView");
-const shopSearch = $("shopSearch");
-const shopCat = $("shopCat");
-const shopBrand = $("shopBrand");
-const shopGrid = $("shopGrid");
-const shopEmpty = $("shopEmpty");
-
-const pid = $("pid");
-const pname = $("pname");
-const psku = $("psku");
-const poem = $("poem");
-const pcat = $("pcat");
-const pbrand = $("pbrand");
-const punit = $("punit");
-const pRetail = $("pRetail");
-const pWholesale = $("pWholesale");
-const pdesc = $("pdesc");
-const pimgurl = $("pimgurl");
-const pfile = $("pfile");
-const btnPick = $("btnPick");
-const pactive = $("pactive");
-
-const previewImg = $("previewImg");
-const hint = $("hint");
-
-const btnSave = $("btnSave");
-const btnReset = $("btnReset");
-const btnDel = $("btnDel");
-
-const q = $("q");
-const fcat = $("fcat");
-const fbrand = $("fbrand");
-const fsort = $("fsort");
-const btnClear = $("btnClear");
-const tb = $("tb");
-const empty = $("empty");
-
-const mAdmin = $("mAdmin");
-const adminPass = $("adminPass");
-const adminKey = $("adminKey");
-const btnLogin = $("btnLogin");
-const btnLogout = $("btnLogout");
-
-const mMove = $("mMove");
-const moveFor = $("moveFor");
-const mtype = $("mtype");
-const mqty = $("mqty");
-const mnote = $("mnote");
-const mwarehouse = $("mwarehouse");
-const mfrom = $("mfrom");
-const mto = $("mto");
-const wrapWarehouse = $("wrapWarehouse");
-const wrapFrom = $("wrapFrom");
-const wrapTo = $("wrapTo");
-const btnSaveMove = $("btnSaveMove");
-
-const toast = $("toast");
-const toastText = $("toastText");
-
-/* =========================
-   INIT
-========================= */
-init();
-
-async function init(){
-  wireModalClose();
-  wireUI();
-
-  updatePreview(FALLBACK_IMG, true);
-  syncAdminUI();
-  syncModeUI();
-
-  await reloadAll();
-  renderAll();
+// ====================== UI HELPERS ======================
+function setRoleUI() {
+  document.querySelectorAll(".adminOnly").forEach(el => el.style.display = (ROLE === "admin") ? "" : "none");
+  document.querySelectorAll(".guestOnly").forEach(el => el.style.display = (ROLE !== "admin") ? "" : "none");
 }
 
-/* =========================
-   UI WIRING
-========================= */
-function wireModalClose(){
-  document.addEventListener("click",(e)=>{
-    if (e.target?.dataset?.close) closeAllModals();
-  });
+function toast(msg){ alert(msg); }
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function formatVND(n){ return (Number(n)||0).toLocaleString("vi-VN") + " đ"; }
+
+// ====================== API ======================
+async function apiGet(action, params={}) {
+  const url = new URL(API_URL);
+  url.searchParams.set("action", action);
+  url.searchParams.set("token", TOKEN || "");
+  Object.entries(params).forEach(([k,v]) => url.searchParams.set(k, v));
+  const res = await fetch(url.toString());
+  return await res.json();
 }
 
-function wireUI(){
-  btnPing?.addEventListener("click", async ()=>{
-    const r = await apiGet("ping");
-    if (r.ok) toastOK("API OK: " + (r.time || ""));
-    else toastBad(r.error || "Ping failed");
+async function apiPost(action, payload) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ action, token: TOKEN || "", payload })
   });
-
-  btnReload?.addEventListener("click", async ()=>{
-    await reloadAll();
-    toastOK("Đã làm mới");
-    renderAll();
-  });
-
-  btnExportCSV?.addEventListener("click", ()=>{
-    exportCSV();
-  });
-
-  csvFile?.addEventListener("change", async ()=>{
-    const file = csvFile.files?.[0];
-    csvFile.value = "";
-    if (!file) return;
-    if (!S.isAdmin) return toastBad("Chỉ admin import.");
-    try{
-      const txt = await file.text();
-      const rows = parseCSV(txt);
-      await importCSV(rows);
-    }catch(err){
-      toastBad(String(err.message || err));
-    }
-  });
-
-  btnAdmin?.addEventListener("click", ()=>openModal(mAdmin));
-
-  btnModeDashboard?.addEventListener("click", ()=>{
-    S.mode = "dashboard";
-    localStorage.setItem("mode_v1", S.mode);
-    syncModeUI();
-    renderAll();
-  });
-
-  btnModeShop?.addEventListener("click", ()=>{
-    S.mode = "shop";
-    localStorage.setItem("mode_v1", S.mode);
-    syncModeUI();
-    renderAll();
-  });
-
-  globalWarehouse?.addEventListener("change", ()=>{
-    S.globalWarehouse = globalWarehouse.value;
-    renderTable();
-    renderShop();
-  });
-
-  // form image
-  btnPick?.addEventListener("click", ()=>pfile.click());
-
-  pimgurl?.addEventListener("input", ()=>{
-    const url = (pimgurl.value || "").trim();
-    if(!url){
-      previewImg.dataset.src = "";
-      updatePreview(FALLBACK_IMG,true);
-      return;
-    }
-    previewImg.dataset.src = url;
-    updatePreview(url,false);
-  });
-
-  pfile?.addEventListener("change", async ()=>{
-    const file = pfile.files?.[0];
-    if (!file) return;
-    const dataUrl = await fileToDataUrlCompressed(file, 1000, 0.86);
-    previewImg.dataset.src = dataUrl;
-    pimgurl.value = "";
-    updatePreview(dataUrl,false);
-  });
-
-  btnReset?.addEventListener("click", ()=>resetForm());
-
-  btnSave?.addEventListener("click", async ()=>{
-    if(!S.isAdmin) return toastBad("Bạn phải đăng nhập admin.");
-    await saveProduct();
-  });
-
-  btnDel?.addEventListener("click", async ()=>{
-    if(!S.isAdmin) return toastBad("Chỉ admin.");
-    const id = pid.value;
-    if(!id) return;
-    if(!confirm("Xoá sản phẩm này?")) return;
-    const res = await apiPost({ action:"delete_product", adminKey:S.adminKey, id });
-    if(!res.ok) return toastBad(res.error || "Delete failed");
-    await reloadAll();
-    resetForm();
-    toastOK("Đã xoá");
-    renderAll();
-  });
-
-  // table filters
-  q?.addEventListener("input", ()=>{ S.filters.q = q.value.trim(); renderTable(); });
-  fcat?.addEventListener("change", ()=>{ S.filters.cat = fcat.value; renderTable(); });
-  fbrand?.addEventListener("change", ()=>{ S.filters.brand = fbrand.value; renderTable(); });
-  fsort?.addEventListener("change", ()=>{ S.filters.sort = fsort.value; renderTable(); });
-
-  btnClear?.addEventListener("click", ()=>{
-    S.filters = { q:"", cat:"", brand:"", sort:"newest" };
-    q.value=""; fcat.value=""; fbrand.value=""; fsort.value="newest";
-    renderTable();
-  });
-
-  // admin auth
-  btnLogin?.addEventListener("click", ()=>{
-    const pass = (adminPass.value||"").trim();
-    const key = (adminKey.value||"").trim();
-    if (pass !== ADMIN_PASSWORD) return toastBad("Sai mật khẩu admin UI.");
-    if (!key) return toastBad("Thiếu ADMIN_KEY.");
-
-    S.isAdmin = true;
-    S.adminKey = key;
-    localStorage.setItem("is_admin_v1","1");
-    localStorage.setItem("admin_key_v1", key);
-    adminPass.value = "";
-    toastOK("Admin ON");
-    syncAdminUI();
-    closeAllModals();
-    renderAll();
-  });
-
-  btnLogout?.addEventListener("click", ()=>{
-    S.isAdmin = false;
-    localStorage.setItem("is_admin_v1","0");
-    toastOK("Admin OFF");
-    syncAdminUI();
-    closeAllModals();
-    renderAll();
-  });
-
-  // shop filters
-  shopSearch?.addEventListener("input", ()=>{ S.shop.q = shopSearch.value.trim(); renderShop(); });
-  shopCat?.addEventListener("change", ()=>{ S.shop.cat = shopCat.value; renderShop(); });
-  shopBrand?.addEventListener("change", ()=>{ S.shop.brand = shopBrand.value; renderShop(); });
-
-  // move modal type switching
-  mtype?.addEventListener("change", ()=>{
-    syncMoveTypeUI();
-  });
-
-  btnSaveMove?.addEventListener("click", async ()=>{
-    if(!S.isAdmin) return toastBad("Chỉ admin.");
-
-    const qty = Number(mqty.value||0);
-    if(!S.moveProductId) return toastBad("Thiếu sản phẩm.");
-    if(!Number.isFinite(qty) || qty<=0) return toastBad("Số lượng > 0");
-
-    const type = mtype.value;
-    const note = (mnote.value||"").trim();
-
-    const payload = {
-      id: rid(),
-      type,
-      productId: S.moveProductId,
-      qty,
-      cost: 0,
-      note
-    };
-
-    if (type === "IN" || type === "OUT"){
-      payload.warehouse = mwarehouse.value || (S.warehouses[0]?.code || "A");
-      payload.fromWarehouse = "";
-      payload.toWarehouse = "";
-    } else {
-      payload.warehouse = "";
-      payload.fromWarehouse = mfrom.value;
-      payload.toWarehouse = mto.value;
-      if (!payload.fromWarehouse || !payload.toWarehouse) return toastBad("Chọn đủ kho.");
-      if (payload.fromWarehouse === payload.toWarehouse) return toastBad("Kho đi và kho đến phải khác nhau.");
-    }
-
-    const res = await apiPost({ action:"add_move", adminKey:S.adminKey, move: payload });
-    if(!res.ok) return toastBad(res.error || "Move failed");
-
-    closeAllModals();
-    mqty.value=""; mnote.value="";
-    await reloadAll();
-    toastOK("Đã lưu phiếu");
-    renderAll();
-  });
+  return await res.json();
 }
 
-/* =========================
-   MODE + ADMIN UI
-========================= */
-function syncModeUI(){
-  const isShop = S.mode === "shop";
-  shopView.hidden = !isShop;
-  dashboardView.hidden = isShop;
+// ====================== LOAD + RENDER ======================
+async function loadProducts() {
+  const data = await apiGet("products_list");
+  if (!data.ok) return toast(data.error || "Lỗi load");
+
+  ROLE = data.role || "guest";
+  setRoleUI();
+
+  ALL = data.items || [];
+  buildFilters();
+  render();
+  updateCartCount();
 }
 
-function syncAdminUI(){
-  pillRole.textContent = S.isAdmin ? "ADMIN" : "KHÁCH";
+function buildFilters(){
+  const cats = [...new Set(ALL.map(x => x.category).filter(Boolean))].sort();
+  const brands = [...new Set(ALL.map(x => x.brand).filter(Boolean))].sort();
 
-  btnLogout.hidden = !S.isAdmin;
-  btnLogin.hidden = S.isAdmin;
-
-  const lock = !S.isAdmin;
-  [pname,psku,poem,pcat,pbrand,punit,pRetail,pWholesale,pdesc,pimgurl,pactive].forEach(el=>el.disabled = lock);
-  btnPick.disabled = lock;
-  btnSave.disabled = lock;
-  btnReset.disabled = lock;
-  btnDel.hidden = !(S.isAdmin && pid.value);
-
-  chipOnline.innerHTML = `<span class="dot"></span> ${S.isAdmin ? "Admin ready" : "Viewer"}`;
+  $("cat").innerHTML = `<option value="">Tất cả loại</option>` + cats.map(c => `<option>${escapeHtml(c)}</option>`).join("");
+  $("brand").innerHTML = `<option value="">Tất cả thương hiệu</option>` + brands.map(b => `<option>${escapeHtml(b)}</option>`).join("");
 }
 
-/* =========================
-   DATA LOAD
-========================= */
-async function reloadAll(){
-  setChip("Loading...", "#f59e0b");
-  const [p,m,w] = await Promise.all([
-    apiGet("list_products"),
-    apiGet("list_moves"),
-    apiGet("list_warehouses")
-  ]);
-
-  if(!p.ok){ setChip("Products error", "#ef4444"); toastBad(p.error||"Load products failed"); return; }
-  if(!m.ok){ setChip("Moves error", "#ef4444"); toastBad(m.error||"Load moves failed"); return; }
-  if(!w.ok){ setChip("Warehouses error", "#ef4444"); toastBad(w.error||"Load warehouses failed"); return; }
-
-  S.products = (p.data || []).filter(x => x.active !== false);
-  S.moves = m.data || [];
-  S.warehouses = (w.data || []).filter(x => x.active !== false);
-
-  rebuildStock();
-  buildOptions();
-
-  // stats
-  statProducts.textContent = String(S.products.length);
-  statMoves.textContent = String(S.moves.length);
-  statWarehouses.textContent = String(S.warehouses.length);
-
-  setChip("OK", "#22c55e");
+function matchQuery(item, q){
+  if(!q) return true;
+  q = q.toLowerCase();
+  return (
+    String(item.name||"").toLowerCase().includes(q) ||
+    String(item.oem||"").toLowerCase().includes(q) ||
+    String(item.oem_alt||"").toLowerCase().includes(q)
+  );
 }
 
-function setChip(text, color){
-  chipOnline.innerHTML = `<span class="dot" style="background:${color}"></span> ${text}`;
-}
+function render(){
+  const q = $("q").value.trim();
+  const cat = $("cat").value.trim();
+  const brand = $("brand").value.trim();
+  const low = $("lowStock").checked;
 
-/* =========================
-   STOCK
-========================= */
-function rebuildStock(){
-  const total = new Map();
-  const byWH = new Map();
-
-  const add = (wh, pid, delta)=>{
-    const k = `${wh}|${pid}`;
-    byWH.set(k, (byWH.get(k)||0) + delta);
-    total.set(pid, (total.get(pid)||0) + delta);
-  };
-
-  for(const mv of S.moves){
-    const qty = Number(mv.qty||0);
-    if (!mv.productId) continue;
-
-    if (mv.type === "IN"){
-      add(mv.warehouse || "A", mv.productId, qty);
-    } else if (mv.type === "OUT"){
-      add(mv.warehouse || "A", mv.productId, -qty);
-    } else if (mv.type === "TRANSFER"){
-      if (mv.fromWarehouse) add(mv.fromWarehouse, mv.productId, -qty);
-      if (mv.toWarehouse) add(mv.toWarehouse, mv.productId, qty);
-    }
-  }
-
-  S.stockTotal = total;
-  S.stockByWH = byWH;
-}
-
-function stockTotal(pid){ return S.stockTotal.get(pid)||0; }
-function stockWH(wh,pid){ return S.stockByWH.get(`${wh}|${pid}`)||0; }
-
-/* =========================
-   OPTIONS
-========================= */
-function buildOptions(){
-  // categories + brands
-  const cats = uniq(S.products.map(p => (p.category||"").trim()).filter(Boolean)).sort(locale);
-  const brands = uniq(S.products.map(p => (p.brand||"").trim()).filter(Boolean)).sort(locale);
-
-  fcat.innerHTML = `<option value="">Tất cả danh mục</option>` + cats.map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
-  fbrand.innerHTML = `<option value="">Tất cả thương hiệu</option>` + brands.map(b=>`<option value="${escAttr(b)}">${esc(b)}</option>`).join("");
-
-  shopCat.innerHTML = `<option value="">Tất cả danh mục</option>` + cats.map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join("");
-  shopBrand.innerHTML = `<option value="">Tất cả thương hiệu</option>` + brands.map(b=>`<option value="${escAttr(b)}">${esc(b)}</option>`).join("");
-
-  // global warehouse
-  globalWarehouse.innerHTML =
-    `<option value="">Tất cả kho</option>` +
-    S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||("Kho "+w.code))}</option>`).join("");
-
-  // move modal warehouse selects
-  mwarehouse.innerHTML = S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||"")}</option>`).join("");
-  mfrom.innerHTML = S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||"")}</option>`).join("");
-  mto.innerHTML = S.warehouses.map(w=>`<option value="${escAttr(w.code)}">${esc(w.code)} — ${esc(w.name||"")}</option>`).join("");
-
-  // keep selection
-  if (S.globalWarehouse && !S.warehouses.some(w=>w.code===S.globalWarehouse)){
-    S.globalWarehouse = "";
-  }
-  globalWarehouse.value = S.globalWarehouse;
-}
-
-/* =========================
-   RENDER ALL
-========================= */
-function renderAll(){
-  syncAdminUI();
-  syncModeUI();
-  renderTable();
-  renderShop();
-}
-
-/* =========================
-   TABLE RENDER
-========================= */
-function getFilteredProducts(){
-  let arr = [...S.products];
-
-  const qv = (S.filters.q||"").toLowerCase();
-  if (qv){
-    arr = arr.filter(p=>{
-      const hay = `${p.name||""} ${p.sku||""} ${p.oem||""} ${p.brand||""} ${p.category||""}`.toLowerCase();
-      return hay.includes(qv);
-    });
-  }
-
-  if (S.filters.cat) arr = arr.filter(p => (p.category||"").trim() === S.filters.cat);
-  if (S.filters.brand) arr = arr.filter(p => (p.brand||"").trim() === S.filters.brand);
-
-  arr.sort((a,b)=>{
-    if (S.filters.sort === "az") return locale(a.name,b.name);
-    if (S.filters.sort === "za") return locale(b.name,a.name);
-    if (S.filters.sort === "stockDesc") return getDisplayStock(b.id) - getDisplayStock(a.id);
-    if (S.filters.sort === "stockAsc") return getDisplayStock(a.id) - getDisplayStock(b.id);
-    return String(b.updatedAt||"").localeCompare(String(a.updatedAt||""));
+  const items = ALL.filter(x => {
+    if (!matchQuery(x,q)) return false;
+    if (cat && x.category !== cat) return false;
+    if (brand && x.brand !== brand) return false;
+    if (low && !x.low_stock) return false;
+    return true;
   });
 
-  return arr;
+  $("grid").innerHTML = items.map(cardHTML).join("");
 }
 
-function getDisplayStock(productId){
-  if (!S.globalWarehouse) return stockTotal(productId);
-  return stockWH(S.globalWarehouse, productId);
-}
-
-function renderTable(){
-  const items = getFilteredProducts();
-  empty.hidden = items.length !== 0;
-
-  const whShort = S.warehouses.slice(0,5); // show up to 5 kho line
-
-  tb.innerHTML = items.map(p=>{
-    const img = p.imageUrl || FALLBACK_IMG;
-
-    const whLine = !S.globalWarehouse
-      ? whShort.map(w=>`${w.code}:${stockWH(w.code,p.id)}`).join(" • ")
-      : `${S.globalWarehouse}:${stockWH(S.globalWarehouse,p.id)} (lọc)`;
-
-    const stock = getDisplayStock(p.id);
-
-    const priceText = formatVND(p.priceRetail || 0);
-
-    return `
-      <tr>
-        <td>
-          <div class="timg">
-            <img src="${escAttr(img)}" alt="img" onerror="this.src='${escAttr(FALLBACK_IMG)}'">
-          </div>
-        </td>
-        <td>
-          <div style="font-weight:1000">${esc(p.name||"")}</div>
-          <div class="small muted">SKU: ${esc(p.sku||"—")} • OEM: ${esc(p.oem||"—")} • ĐV: ${esc(p.unit||"—")}</div>
-          <div class="whline">${esc(whLine)} • <b>Tổng:</b> ${stockTotal(p.id)}</div>
-        </td>
-        <td>${esc(p.category||"")}</td>
-        <td>${esc(p.brand||"")}</td>
-        <td><span class="badge"><i class="fa-solid fa-box"></i> ${stock}</span></td>
-        <td style="font-weight:1000">${priceText}</td>
-        <td>
-          <div class="act">
-            <button class="btn btn-sm" data-edit="${escAttr(p.id)}"><i class="fa-solid fa-pen"></i> Sửa</button>
-            <button class="btn btn-sm btn-primary" data-move="${escAttr(p.id)}" data-kind="IN"><i class="fa-solid fa-arrow-down"></i> Nhập</button>
-            <button class="btn btn-sm btn-dark" data-move="${escAttr(p.id)}" data-kind="OUT"><i class="fa-solid fa-arrow-up"></i> Xuất</button>
-            <button class="btn btn-sm btn-ghost" data-move="${escAttr(p.id)}" data-kind="TRANSFER"><i class="fa-solid fa-right-left"></i> Chuyển</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join("");
-
-  // wire edit
-  tb.querySelectorAll("[data-edit]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      if (!S.isAdmin) return toastBad("Khách chỉ xem.");
-      const p = S.products.find(x=>x.id === btn.dataset.edit);
-      if (!p) return;
-      fillForm(p);
-      toastOK("Đã nạp form để sửa");
-    });
-  });
-
-  // wire move
-  tb.querySelectorAll("[data-move]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      if (!S.isAdmin) return toastBad("Chỉ admin.");
-      const id = btn.dataset.move;
-      const kind = btn.dataset.kind;
-      const p = S.products.find(x=>x.id === id);
-      if (!p) return;
-
-      S.moveProductId = id;
-      moveFor.textContent = `Sản phẩm: ${p.name} (${p.sku||"no-sku"})`;
-
-      mtype.value = kind;
-      mqty.value = "";
-      mnote.value = "";
-
-      // default values
-      if (S.warehouses.length){
-        mwarehouse.value = S.globalWarehouse || S.warehouses[0].code;
-        mfrom.value = S.warehouses[0].code;
-        mto.value = S.warehouses[Math.min(1, S.warehouses.length-1)].code;
-      }
-
-      syncMoveTypeUI();
-      openModal(mMove);
-    });
-  });
-}
-
-function syncMoveTypeUI(){
-  const t = mtype.value;
-  if (t === "TRANSFER"){
-    wrapWarehouse.hidden = true;
-    wrapFrom.hidden = false;
-    wrapTo.hidden = false;
-  } else {
-    wrapWarehouse.hidden = false;
-    wrapFrom.hidden = true;
-    wrapTo.hidden = true;
-  }
-}
-
-/* =========================
-   SHOP RENDER
-========================= */
-function renderShop(){
-  const qv = (S.shop.q || "").toLowerCase();
-  const cat = S.shop.cat || "";
-  const brand = S.shop.brand || "";
-
-  let items = [...S.products];
-
-  if (qv){
-    items = items.filter(p=>{
-      const hay = `${p.name||""} ${p.sku||""} ${p.oem||""} ${p.brand||""} ${p.category||""}`.toLowerCase();
-      return hay.includes(qv);
-    });
-  }
-  if (cat) items = items.filter(p => (p.category||"").trim() === cat);
-  if (brand) items = items.filter(p => (p.brand||"").trim() === brand);
-
-  shopEmpty.hidden = items.length !== 0;
-
-  shopGrid.innerHTML = items.map(p=>{
-    const img = p.imageUrl || FALLBACK_IMG;
-    const stock = getDisplayStock(p.id);
-    return `
-      <div class="shop-card">
-        <div class="shop-img">
-          <img src="${escAttr(img)}" alt="img" onerror="this.src='${escAttr(FALLBACK_IMG)}'">
+function cardHTML(p){
+  const total = (p.qty_warehouse||0) + (p.qty_store||0);
+  const img = p.image_url || "https://via.placeholder.com/600x400?text=No+Image";
+  return `
+    <div class="card" onclick="openModal('${p.id}')">
+      <div class="thumb"><img src="${img}" alt="${escapeHtml(p.name||'')}"/></div>
+      <div class="cardBody">
+        <div class="name">${escapeHtml(p.name||"")}</div>
+        <div class="meta">
+          OEM: <b>${escapeHtml(p.oem||"")}</b> • Giá: <b>${formatVND(p.price||0)}</b>
         </div>
-        <div class="shop-body">
-          <div class="shop-name">${esc(p.name||"")}</div>
-          <div class="shop-meta">${esc(p.brand||"")} • ${esc(p.category||"")} • SKU: ${esc(p.sku||"—")}</div>
-          <div class="shop-price">${formatVND(p.priceRetail||0)}</div>
-          <div class="shop-stock">Tồn: ${stock}${S.globalWarehouse ? ` (Kho ${esc(S.globalWarehouse)})` : ""}</div>
+        <div class="badges">
+          <span class="badge">Kho: ${p.qty_warehouse||0}</span>
+          <span class="badge">CH: ${p.qty_store||0}</span>
+          <span class="badge ${total<=3?'low':'ok'}">${total<=3?'Sắp hết':'OK'}</span>
         </div>
       </div>
-    `;
+    </div>
+  `;
+}
+
+// ====================== MODAL ======================
+window.openModal = async (id) => {
+  const data = await apiGet("product_get", { id });
+  if (!data.ok) return toast(data.error || "Không tìm thấy");
+
+  CURRENT = data.item;
+  fillModal(CURRENT);
+  renderAlbum(CURRENT);
+  await loadTxns(CURRENT.id);
+  $("modal").classList.remove("hidden");
+};
+
+function closeModal(){
+  $("modal").classList.add("hidden");
+  CURRENT = null;
+}
+
+function fillModal(p){
+  $("f_id").value = p.id || "";
+  $("f_oem").value = p.oem || "";
+  $("f_oem_alt").value = p.oem_alt || "";
+  $("f_name").value = p.name || "";
+  $("f_brand").value = p.brand || "";
+  $("f_category").value = p.category || "";
+  $("f_price").value = p.price || 0;
+  $("f_desc").value = p.desc || "";
+
+  $("s_wh").textContent = p.qty_warehouse || 0;
+  $("s_st").textContent = p.qty_store || 0;
+
+  $("mTitle").textContent = `${p.name || "Chi tiết sản phẩm"} (${p.id})`;
+  $("mImg").src = p.image_url || "https://via.placeholder.com/800x600?text=No+Image";
+  $("cart_qty").value = 1;
+}
+
+function renderAlbum(p){
+  const ids = String(p.image_ids||"").split(";").map(x=>x.trim()).filter(Boolean);
+  const urls = ids.map(id => `https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`);
+  const el = $("album");
+  if(!el) return;
+  el.innerHTML = urls.map(u=>`<img src="${u}" title="Xem ảnh" onclick="document.getElementById('mImg').src='${u}'"/>`).join("");
+}
+
+async function loadTxns(id){
+  const data = await apiGet("txns_by_product", { id, limit: 30 });
+  if(!data.ok) { $("txnsList").innerHTML = "Không tải được lịch sử"; return; }
+  $("txnsList").innerHTML = data.items.map(t=>{
+    const time = new Date(t.time).toLocaleString("vi-VN");
+    const loc = t.type==="MOVE" ? `${t.from_loc} → ${t.to_loc}` : (t.type==="IN" ? `Nhập ${t.to_loc}` : `Xuất ${t.from_loc}`);
+    return `<div class="txnItem">
+      <div>${time} • <b>${escapeHtml(t.type)}</b> • ${escapeHtml(loc)} • SL: <b>${t.qty}</b></div>
+      <div>${escapeHtml(t.note||"")}</div>
+    </div>`;
   }).join("");
 }
 
-/* =========================
-   FORM
-========================= */
-function resetForm(){
-  pid.value = "";
-  pname.value = "";
-  psku.value = "";
-  poem.value = "";
-  pcat.value = "";
-  pbrand.value = "";
-  punit.value = "";
-  pRetail.value = "0";
-  pWholesale.value = "0";
-  pdesc.value = "";
-  pimgurl.value = "";
-  pfile.value = "";
-  pactive.value = "true";
-
-  previewImg.dataset.src = "";
-  updatePreview(FALLBACK_IMG, true);
-
-  btnDel.hidden = true;
-}
-
-function fillForm(p){
-  pid.value = p.id || "";
-  pname.value = p.name || "";
-  psku.value = p.sku || "";
-  poem.value = p.oem || "";
-  pcat.value = p.category || "";
-  pbrand.value = p.brand || "";
-  punit.value = p.unit || "";
-  pRetail.value = String(Number(p.priceRetail||0));
-  pWholesale.value = String(Number(p.priceWholesale||0));
-  pdesc.value = p.desc || "";
-  pactive.value = (p.active === false) ? "false" : "true";
-
-  pimgurl.value = "";
-  pfile.value = "";
-
-  previewImg.dataset.src = p.imageUrl || "";
-  updatePreview(p.imageUrl || FALLBACK_IMG, !p.imageUrl);
-
-  btnDel.hidden = !S.isAdmin ? true : false;
-}
-
+// ====================== ADMIN: SAVE/DELETE ======================
 async function saveProduct(){
-  const id = pid.value || rid();
-  const name = (pname.value||"").trim();
-  if (!name) return toastBad("Tên sản phẩm là bắt buộc.");
-
-  const rawSrc = (previewImg.dataset.src||"").trim() || (pimgurl.value||"").trim();
-
-  // upload to Drive only when it's dataUrl
-  let imageUrl = rawSrc || "";
-  try{
-    if (imageUrl.startsWith("data:image/")){
-      setChip("Uploading image...", "#f59e0b");
-      const up = await apiPost({
-        action: "upload_image_to_drive",
-        adminKey: S.adminKey,
-        file: { name: `p_${id}.jpg`, mime: "image/jpeg", dataUrl: imageUrl }
-      });
-      if (!up.ok) throw new Error(up.error || "Upload ảnh thất bại");
-      imageUrl = up.imageUrl;
-    }
-  } finally {
-    setChip("OK", "#22c55e");
-  }
-
-  const product = {
-    id,
-    sku: (psku.value||"").trim(),
-    name,
-    category: (pcat.value||"").trim(),
-    brand: (pbrand.value||"").trim(),
-    oem: (poem.value||"").trim(),
-    unit: (punit.value||"").trim(),
-    priceRetail: Number(pRetail.value||0),
-    priceWholesale: Number(pWholesale.value||0),
-    imageUrl: imageUrl || "",
-    desc: (pdesc.value||"").trim(),
-    active: (pactive.value === "true")
+  const payload = {
+    id: $("f_id").value.trim() || undefined,
+    oem: $("f_oem").value.trim(),
+    oem_alt: $("f_oem_alt").value.trim(),
+    name: $("f_name").value.trim(),
+    brand: $("f_brand").value.trim(),
+    category: $("f_category").value.trim(),
+    price: Number($("f_price").value || 0),
+    desc: $("f_desc").value.trim(),
+    image_file_id: CURRENT?.image_file_id || "",
+    image_url: CURRENT?.image_url || "",
+    image_ids: CURRENT?.image_ids || ""
   };
 
-  const res = await apiPost({ action:"upsert_product", adminKey: S.adminKey, product });
-  if (!res.ok) return toastBad(res.error || "Save failed");
+  const res = await apiPost("product_upsert", payload);
+  if (!res.ok) return toast(res.error || "Lỗi lưu");
 
-  await reloadAll();
-  pid.value = id;
-  btnDel.hidden = false;
-  toastOK("Đã lưu sản phẩm");
-  renderAll();
+  toast("Đã lưu");
+  await loadProducts();
+  await openModal(res.id);
 }
 
-/* =========================
-   CSV Export/Import
-========================= */
-function exportCSV(){
-  const headers = [
-    "id","sku","name","category","brand","oem","unit","priceRetail","priceWholesale","imageUrl","desc","active"
-  ];
+async function deleteProduct(){
+  if (!confirm("Xóa sản phẩm này?")) return;
+  const res = await apiGet("product_delete", { id: $("f_id").value.trim() });
+  if (!res.ok) return toast(res.error || "Lỗi xóa");
+  toast("Đã xóa");
+  closeModal();
+  await loadProducts();
+}
 
-  const lines = [];
-  lines.push(headers.join(","));
+// ====================== STOCK ======================
+async function adjustStock(){
+  const payload = {
+    loc: $("adj_loc").value,
+    type: $("adj_type").value,
+    product_id: $("f_id").value.trim(),
+    qty: Number($("adj_qty").value || 0),
+    note: "Điều chỉnh tồn"
+  };
+  const res = await apiPost("stock_adjust", payload);
+  if (!res.ok) return toast(res.error || "Lỗi");
+  toast("OK");
+  await openModal(payload.product_id);
+  await loadProducts();
+}
 
-  for(const p of S.products){
-    const row = headers.map(h => csvEscape(p[h]));
-    lines.push(row.join(","));
+async function moveStock(){
+  const payload = {
+    from_loc: $("mv_from").value,
+    to_loc: $("mv_to").value,
+    product_id: $("f_id").value.trim(),
+    qty: Number($("mv_qty").value || 0),
+    note: "Chuyển kho"
+  };
+  const res = await apiPost("stock_move", payload);
+  if (!res.ok) return toast(res.error || "Lỗi");
+  toast("Đã chuyển");
+  await openModal(payload.product_id);
+  await loadProducts();
+}
+
+// ====================== UPLOAD IMAGE ======================
+function fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(file);
+  });
+}
+
+async function uploadCover(file){
+  const base64 = await fileToBase64(file);
+  const payload = { filename: file.name, mimeType: file.type, base64 };
+  const res = await apiPost("image_upload", payload);
+  if (!res.ok) return toast(res.error || "Upload lỗi");
+
+  CURRENT.image_file_id = res.file_id;
+  CURRENT.image_url = res.url;
+  $("mImg").src = res.url;
+  toast("Đã upload ảnh đại diện (nhớ bấm Lưu)");
+}
+
+async function uploadAlbum(files){
+  const list = [];
+  for(const f of files){
+    list.push({ filename:f.name, mimeType:f.type, base64: await fileToBase64(f) });
+  }
+  const res = await apiPost("images_upload", { files: list });
+  if(!res.ok) return toast(res.error || "Upload album lỗi");
+
+  const newIds = res.items.map(x=>x.file_id);
+  const old = String(CURRENT.image_ids||"").split(";").map(x=>x.trim()).filter(Boolean);
+  const merged = [...old, ...newIds];
+  CURRENT.image_ids = merged.join(";");
+
+  if(!CURRENT.image_url && res.items[0]){
+    CURRENT.image_url = res.items[0].url;
+    CURRENT.image_file_id = res.items[0].file_id;
+    $("mImg").src = CURRENT.image_url;
   }
 
-  const blob = new Blob([lines.join("\n")], { type:"text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
+  renderAlbum(CURRENT);
+  toast("Đã upload album (nhớ bấm Lưu)");
+}
 
+// ====================== CART ======================
+$("btnAddCart").onclick = ()=>{
+  if(!CURRENT) return;
+  const pid = $("f_id").value.trim();
+  const qty = Number($("cart_qty").value||1);
+  const price = Number($("f_price").value||0);
+  const name = $("f_name").value.trim();
+
+  if(!pid || qty<=0) return toast("Sai số lượng");
+
+  const idx = CART.findIndex(x=>x.product_id===pid);
+  if(idx>=0) CART[idx].qty += qty;
+  else CART.push({ product_id: pid, name, price, qty });
+
+  saveCart();
+  toast("Đã thêm vào giỏ");
+};
+
+function renderCart(){
+  if(!CART.length){
+    $("cartTable").innerHTML = "<div style='color:var(--muted)'>Giỏ trống</div>";
+    updateCartCount();
+    return;
+  }
+  const total = CART.reduce((s,i)=>s+i.qty*i.price,0);
+
+  $("cartTable").innerHTML = `
+    <table style="width:100%;border-collapse:collapse">
+      <thead><tr>
+        <th style="text-align:left;border-bottom:1px solid var(--line);padding:8px">Sản phẩm</th>
+        <th style="text-align:right;border-bottom:1px solid var(--line);padding:8px">SL</th>
+        <th style="text-align:right;border-bottom:1px solid var(--line);padding:8px">Giá</th>
+        <th style="text-align:right;border-bottom:1px solid var(--line);padding:8px">TT</th>
+        <th style="border-bottom:1px solid var(--line);padding:8px"></th>
+      </tr></thead>
+      <tbody>
+        ${CART.map((it,idx)=>`
+          <tr>
+            <td style="padding:8px;border-bottom:1px dashed var(--line)">
+              ${escapeHtml(it.name)}<br/><span style="color:var(--muted)">${escapeHtml(it.product_id)}</span>
+            </td>
+            <td style="padding:8px;border-bottom:1px dashed var(--line);text-align:right">
+              <input type="number" min="1" value="${it.qty}" style="width:80px"
+                onchange="cartSetQty(${idx}, this.value)"/>
+            </td>
+            <td style="padding:8px;border-bottom:1px dashed var(--line);text-align:right">${formatVND(it.price)}</td>
+            <td style="padding:8px;border-bottom:1px dashed var(--line);text-align:right">${formatVND(it.qty*it.price)}</td>
+            <td style="padding:8px;border-bottom:1px dashed var(--line);text-align:right">
+              <button class="danger" onclick="cartRemove(${idx})">Xóa</button>
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+      <tfoot>
+        <tr>
+          <th colspan="3" style="text-align:right;padding:8px">Tổng</th>
+          <th style="text-align:right;padding:8px">${formatVND(total)}</th>
+          <th></th>
+        </tr>
+      </tfoot>
+    </table>
+  `;
+  updateCartCount();
+}
+
+window.cartSetQty = (idx, v)=>{
+  const q = Number(v||1);
+  CART[idx].qty = q>0?q:1;
+  saveCart(); renderCart();
+};
+window.cartRemove = (idx)=>{
+  CART.splice(idx,1);
+  saveCart(); renderCart();
+};
+
+// ====================== BILL (checkout) ======================
+$("btnCheckout").onclick = async ()=>{
+  if(ROLE!=="admin") return toast("Chỉ admin tạo bill");
+  if(!CART.length) return toast("Giỏ trống");
+
+  const loc = $("cart_loc").value;
+  const note = $("cart_note").value.trim();
+
+  const payload = {
+    loc,
+    note,
+    items: CART.map(it=>({ product_id: it.product_id, qty: it.qty, price: it.price }))
+  };
+
+  const res = await apiPost("bill_create", payload);
+  if(!res.ok) return toast(res.error || "Lỗi tạo bill");
+
+  printBill({ bill_id: res.bill_id, loc, items: payload.items, total: res.total });
+  CART = [];
+  saveCart();
+  $("cartModal").classList.add("hidden");
+  await loadProducts();
+};
+
+function printBill(bill){
+  const html = `
+  <html><head><meta charset="utf-8">
+  <style>
+    body{font-family:Arial;padding:14px}
+    h2{margin:0 0 6px}
+    table{width:100%;border-collapse:collapse;margin-top:10px}
+    td,th{border:1px solid #ddd;padding:8px}
+    .right{text-align:right}
+  </style>
+  </head><body>
+    <h2>HÓA ĐƠN BÁN HÀNG</h2>
+    <div>Mã bill: <b>${bill.bill_id}</b></div>
+    <div>Nơi bán: <b>${bill.loc}</b></div>
+    <div>Thời gian: <b>${new Date().toLocaleString("vi-VN")}</b></div>
+
+    <table>
+      <thead><tr><th>Mã SP</th><th class="right">SL</th><th class="right">Giá</th><th class="right">Thành tiền</th></tr></thead>
+      <tbody>
+        ${bill.items.map(it => `
+          <tr>
+            <td>${escapeHtml(it.product_id)}</td>
+            <td class="right">${it.qty}</td>
+            <td class="right">${formatVND(it.price)}</td>
+            <td class="right">${formatVND(it.qty*it.price)}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+      <tfoot>
+        <tr><th colspan="3" class="right">Tổng</th><th class="right">${formatVND(bill.total)}</th></tr>
+      </tfoot>
+    </table>
+    <script>window.onload=()=>window.print()</script>
+  </body></html>
+  `;
+  const w = window.open("", "_blank");
+  w.document.write(html);
+  w.document.close();
+}
+
+// ====================== CSV import/export ======================
+function toCSV(rows){
+  const esc = (v) => `"${String(v ?? "").replace(/"/g,'""')}"`;
+  return rows.map(r => r.map(esc).join(",")).join("\n");
+}
+function download(name, text){
   const a = document.createElement("a");
-  a.href = url;
-  a.download = "products_export.csv";
-  document.body.appendChild(a);
+  a.href = URL.createObjectURL(new Blob([text], {type:"text/csv;charset=utf-8"}));
+  a.download = name;
   a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-
-  toastOK("Đã export CSV");
 }
 
-function parseCSV(text){
-  // simple CSV parser (supports quoted)
-  const rows = [];
-  let row = [];
-  let cur = "";
-  let inQuotes = false;
-
-  for (let i=0;i<text.length;i++){
-    const ch = text[i];
-    const next = text[i+1];
-
-    if (ch === '"' && inQuotes && next === '"'){
-      cur += '"';
-      i++;
-      continue;
-    }
-    if (ch === '"'){
-      inQuotes = !inQuotes;
-      continue;
-    }
-    if (!inQuotes && (ch === ",")){
-      row.push(cur);
-      cur = "";
-      continue;
-    }
-    if (!inQuotes && (ch === "\n" || ch === "\r")){
-      if (cur.length || row.length){
-        row.push(cur);
-        rows.push(row);
-      }
-      cur = "";
-      row = [];
-      // skip \r\n
-      if (ch === "\r" && next === "\n") i++;
-      continue;
-    }
-    cur += ch;
-  }
-  if (cur.length || row.length){
-    row.push(cur);
-    rows.push(row);
-  }
-  return rows;
+function exportCSV(){
+  const headers = ["id","oem","oem_alt","name","brand","category","price","desc","image_url","image_ids","qty_warehouse","qty_store"];
+  const rows = [headers].concat(ALL.map(p => [
+    p.id,p.oem,p.oem_alt,p.name,p.brand,p.category,p.price,p.desc,p.image_url,p.image_ids,p.qty_warehouse,p.qty_store
+  ]));
+  download("products.csv", toCSV(rows));
 }
 
-async function importCSV(rows){
-  if (!rows.length) return toastBad("CSV rỗng.");
-
-  const headers = rows[0].map(x => (x||"").trim());
-  const need = ["name"]; // minimal required
-
-  for(const k of need){
-    if (!headers.includes(k)) return toastBad(`CSV thiếu cột: ${k}`);
+function parseCSVLine(line){
+  const out=[]; let cur=""; let q=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c === '"'){ q=!q; continue; }
+    if(c === "," && !q){ out.push(cur); cur=""; continue; }
+    cur+=c;
   }
+  out.push(cur);
+  return out.map(x=>x.trim());
+}
 
-  const idx = (col)=>headers.indexOf(col);
+async function importCSV(file){
+  const text = await file.text();
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if(lines.length<2) return toast("CSV rỗng");
 
-  const dataRows = rows.slice(1).filter(r => r.some(x => String(x||"").trim() !== ""));
-  if (!dataRows.length) return toastBad("CSV không có dữ liệu.");
+  const headers = lines[0].split(",").map(s=>s.replace(/^"|"$/g,"").trim());
+  const idx = (k)=>headers.indexOf(k);
 
-  setChip("Importing...", "#f59e0b");
-
-  // batch upsert sequential (safe)
-  let okCount = 0;
-  for(const r of dataRows){
-    const p = {
-      id: (r[idx("id")] || "").trim() || rid(),
-      sku: (r[idx("sku")] || "").trim(),
-      name: (r[idx("name")] || "").trim(),
-      category: (r[idx("category")] || "").trim(),
-      brand: (r[idx("brand")] || "").trim(),
-      oem: (r[idx("oem")] || "").trim(),
-      unit: (r[idx("unit")] || "").trim(),
-      priceRetail: Number((r[idx("priceRetail")] || "0").trim() || 0),
-      priceWholesale: Number((r[idx("priceWholesale")] || "0").trim() || 0),
-      imageUrl: (r[idx("imageUrl")] || "").trim(),
-      desc: (r[idx("desc")] || "").trim(),
-      active: ((r[idx("active")] || "true").trim().toLowerCase() !== "false")
+  for (let i=1;i<lines.length;i++){
+    const cols = parseCSVLine(lines[i]);
+    const payload = {
+      id: cols[idx("id")] || undefined,
+      oem: cols[idx("oem")] || "",
+      oem_alt: cols[idx("oem_alt")] || "",
+      name: cols[idx("name")] || "",
+      brand: cols[idx("brand")] || "",
+      category: cols[idx("category")] || "",
+      price: Number(cols[idx("price")] || 0),
+      desc: cols[idx("desc")] || "",
+      image_url: cols[idx("image_url")] || "",
+      image_ids: cols[idx("image_ids")] || ""
     };
-
-    if (!p.name) continue;
-
-    const res = await apiPost({ action:"upsert_product", adminKey:S.adminKey, product:p });
-    if (res.ok) okCount++;
+    const res = await apiPost("product_upsert", payload);
+    if(!res.ok) { console.warn(res); toast("Import lỗi dòng "+(i+1)); return; }
   }
-
-  await reloadAll();
-  renderAll();
-  setChip("OK", "#22c55e");
-  toastOK(`Import xong: ${okCount} sản phẩm`);
+  toast("Import xong");
+  await loadProducts();
 }
 
-function csvEscape(v){
-  const s = String(v ?? "");
-  if (s.includes('"') || s.includes(",") || s.includes("\n") || s.includes("\r")){
-    return `"${s.replaceAll('"','""')}"`;
+// ====================== ADD PRODUCT ======================
+async function addProduct(){
+  CURRENT = {
+    id:"",
+    oem:"",
+    oem_alt:"",
+    name:"",
+    brand:"",
+    category:"",
+    price:0,
+    desc:"",
+    image_file_id:"",
+    image_url:"",
+    image_ids:"",
+    qty_warehouse:0,
+    qty_store:0
+  };
+  fillModal({ ...CURRENT, id: "(tự tạo khi lưu)" });
+  renderAlbum(CURRENT);
+  $("txnsList").innerHTML = "";
+  $("modal").classList.remove("hidden");
+}
+
+// ====================== THEME ======================
+function initTheme(){
+  const theme = localStorage.getItem("theme") || "dark";
+  if(theme==="light") document.body.classList.add("light");
+}
+function toggleTheme(){
+  document.body.classList.toggle("light");
+  localStorage.setItem("theme", document.body.classList.contains("light") ? "light" : "dark");
+}
+
+// ====================== LOGIN ======================
+function initToken(){ $("token").value = TOKEN; }
+function saveToken(){
+  TOKEN = $("token").value.trim();
+  localStorage.setItem("token", TOKEN);
+}
+
+// ====================== SCAN QR/BARCODE ======================
+$("btnScan").onclick = async ()=>{
+  if(!("BarcodeDetector" in window)){
+    const code = prompt("Máy không hỗ trợ quét tự động. Nhập OEM/QR:");
+    if(code){ $("q").value = code; render(); }
+    return;
   }
-  return s;
-}
+  const det = new BarcodeDetector({ formats: ["qr_code","code_128","ean_13","ean_8","code_39"] });
 
-/* =========================
-   PREVIEW
-========================= */
-function updatePreview(src, showHint){
-  previewImg.src = src || FALLBACK_IMG;
-  hint.style.display = showHint ? "block" : "none";
-}
+  const overlay = document.createElement("div");
+  overlay.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:99;display:flex;align-items:center;justify-content:center;padding:14px";
+  overlay.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;max-width:520px;width:100%">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)">
+        <b>Quét QR / Barcode</b>
+        <button id="scanClose" style="border:none;background:transparent;color:var(--text);font-size:18px;cursor:pointer">✕</button>
+      </div>
+      <video id="scanVideo" style="width:100%;height:360px;object-fit:cover;background:#000" autoplay playsinline></video>
+      <div style="padding:10px 12px;color:var(--muted);font-size:13px">Đưa mã vào giữa khung hình. Khi nhận dạng được sẽ tự tìm.</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
 
-/* =========================
-   MODALS + TOAST
-========================= */
-function openModal(m){
-  m.classList.add("open");
-  m.setAttribute("aria-hidden","false");
-}
-function closeAllModals(){
-  document.querySelectorAll(".modal").forEach(m=>{
-    m.classList.remove("open");
-    m.setAttribute("aria-hidden","true");
-  });
-}
+  const video = overlay.querySelector("#scanVideo");
+  const closeBtn = overlay.querySelector("#scanClose");
 
-let toastTimer = null;
-function toastOK(msg){ showToast(msg,true); }
-function toastBad(msg){ showToast(msg,false); }
-function showToast(msg, ok){
-  toast.hidden = false;
-  toastText.textContent = msg;
-  toast.querySelector("i").className = ok ? "fa-solid fa-circle-check" : "fa-solid fa-triangle-exclamation";
-  toast.style.background = ok ? "#0b1220" : "#7f1d1d";
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>toast.hidden=true, 2200);
-}
-
-/* =========================
-   API
-========================= */
-async function apiGet(action){
+  let stream;
   try{
-    const url = API_URL + "?action=" + encodeURIComponent(action);
-    const r = await fetch(url, { method:"GET" });
-    return await r.json();
-  }catch(e){
-    return { ok:false, error:String(e.message||e) };
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio:false });
+    video.srcObject = stream;
+  }catch(err){
+    overlay.remove();
+    return toast("Không mở được camera: " + err);
   }
-}
 
-async function apiPost(payload){
-  try{
-    const r = await fetch(API_URL, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify(payload)
-    });
-    return await r.json();
-  }catch(e){
-    return { ok:false, error:String(e.message||e) };
-  }
-}
+  let stop=false;
+  const stopAll = ()=>{
+    stop=true;
+    if(stream) stream.getTracks().forEach(t=>t.stop());
+    overlay.remove();
+  };
+  closeBtn.onclick = stopAll;
 
-/* =========================
-   IMAGE COMPRESS
-========================= */
-async function fileToDataUrlCompressed(file, maxSize=1000, quality=0.86){
-  const dataUrl = await new Promise((res, rej)=>{
-    const fr = new FileReader();
-    fr.onload = ()=>res(String(fr.result));
-    fr.onerror = rej;
-    fr.readAsDataURL(file);
-  });
+  const tick = async ()=>{
+    if(stop) return;
+    try{
+      const barcodes = await det.detect(video);
+      if(barcodes && barcodes.length){
+        const raw = barcodes[0].rawValue || "";
+        stopAll();
+        $("q").value = raw;
+        render();
+      }
+    }catch(_){}
+    requestAnimationFrame(tick);
+  };
+  tick();
+};
 
-  const img = await new Promise((res, rej)=>{
-    const im = new Image();
-    im.onload = ()=>res(im);
-    im.onerror = rej;
-    im.src = dataUrl;
-  });
+// ====================== EVENTS ======================
+$("btnDark").onclick = toggleTheme;
 
-  const w = img.width, h = img.height;
-  const scale = Math.min(1, maxSize / Math.max(w,h));
-  const nw = Math.round(w * scale);
-  const nh = Math.round(h * scale);
+$("btnLogin").onclick = async () => { saveToken(); await loadProducts(); };
 
-  const canvas = document.createElement("canvas");
-  canvas.width = nw;
-  canvas.height = nh;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(img, 0, 0, nw, nh);
+$("q").addEventListener("input", render);
+$("cat").addEventListener("change", render);
+$("brand").addEventListener("change", render);
+$("lowStock").addEventListener("change", render);
 
-  return canvas.toDataURL("image/jpeg", quality);
-}
+$("mClose").onclick = closeModal;
+$("modal").addEventListener("click", (e)=>{ if(e.target.id==="modal") closeModal(); });
 
-/* =========================
-   HELPERS
-========================= */
-function rid(){
-  if (crypto?.getRandomValues){
-    const a = new Uint32Array(2);
-    crypto.getRandomValues(a);
-    return a[0].toString(16) + a[1].toString(16);
-  }
-  return String(Date.now()) + Math.random().toString(16).slice(2);
-}
+$("btnSave").onclick = saveProduct;
+$("btnDelete").onclick = deleteProduct;
 
-function uniq(arr){ return [...new Set(arr)]; }
+$("btnAdjust").onclick = adjustStock;
+$("btnMove").onclick = moveStock;
 
-function locale(a,b){ return String(a||"").localeCompare(String(b||""),"vi"); }
+$("btnAdd").onclick = addProduct;
 
-function formatVND(n){
-  return Number(n||0).toLocaleString("vi-VN") + "đ";
-}
+$("btnExport").onclick = exportCSV;
+$("csvFile").addEventListener("change", (e)=>{
+  const file = e.target.files?.[0];
+  if(file) importCSV(file);
+});
 
-function esc(s){
-  return String(s ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-function escAttr(s){ return esc(s).replaceAll("\n"," "); }
+$("imgFile").addEventListener("change", (e)=>{
+  const file = e.target.files?.[0];
+  if(file) uploadCover(file);
+});
+$("imgFiles").addEventListener("change", (e)=>{
+  const files = [...(e.target.files||[])];
+  if(files.length) uploadAlbum(files);
+});
+
+// cart modal
+$("btnCart").onclick = ()=>{ renderCart(); $("cartModal").classList.remove("hidden"); };
+$("cartClose").onclick = ()=> $("cartModal").classList.add("hidden");
+$("cartModal").addEventListener("click",(e)=>{ if(e.target.id==="cartModal") $("cartModal").classList.add("hidden"); });
+
+// ====================== BOOT ======================
+initTheme();
+initToken();
+loadProducts();
+updateCartCount();
