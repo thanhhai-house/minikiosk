@@ -2,195 +2,212 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quản lý kho phụ tùng</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Quản lý phụ tùng</title>
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <div class="app">
-    <!-- Top bar -->
-    <header class="topbar">
-      <div class="brand">
-        <img class="brand__logo" src="./assets/hero.png" alt="logo" />
-        <div class="brand__text">
-          <div class="brand__title">Quản lý kho phụ tùng</div>
-          <div class="brand__sub">Kho • Cửa hàng • Sheets • Apps Script • GitHub UI</div>
+  <header class="topbar">
+    <div class="brand">quản lý phụ tùng</div>
+
+    <div class="auth">
+      <input id="apiUrl" placeholder="Dán Apps Script WebApp URL..." />
+      <input id="token" placeholder="token (vd: abc123)" />
+      <button id="btnSaveAuth">Lưu</button>
+      <span id="authState" class="pill">chưa kết nối</span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="products">Sản phẩm</button>
+    <button class="tab" data-tab="stock">Tồn kho</button>
+    <button class="tab" data-tab="transfer">Chuyển kho</button>
+    <button class="tab" data-tab="bill">Bán hàng</button>
+    <button class="tab" data-tab="txns">Giao dịch</button>
+    <button class="tab" data-tab="bills">Hóa đơn</button>
+  </nav>
+
+  <main class="wrap">
+    <!-- PRODUCTS -->
+    <section id="tab-products" class="panel show">
+      <div class="panel-head">
+        <h2>PRODUCTS</h2>
+        <div class="row">
+          <input id="pSearch" placeholder="Tìm theo id / oem / tên..." />
+          <button id="btnLoadProducts">Tải</button>
         </div>
       </div>
 
-      <div class="auth">
-        <div class="auth__row">
-          <input id="username" class="input" placeholder="Tài khoản" autocomplete="username" />
-          <input id="password" class="input" placeholder="Mật khẩu" type="password" autocomplete="current-password" />
-          <button id="btnLogin" class="btn btn--primary">Đăng nhập</button>
+      <div class="grid2">
+        <div class="card">
+          <h3>Thêm / Sửa sản phẩm (admin)</h3>
+          <div class="form grid">
+            <label>ID<input id="p_id" /></label>
+            <label>OEM<input id="p_oem" /></label>
+            <label>OEM ALT<input id="p_oem_alt" /></label>
+            <label>Tên<input id="p_name" /></label>
+            <label>Brand<input id="p_brand" /></label>
+            <label>Category<input id="p_category" /></label>
+            <label>Price<input id="p_price" type="number" /></label>
+            <label>Desc<input id="p_desc" /></label>
+            <label>Image file id<input id="p_image_file_id" /></label>
+            <label>Image url<input id="p_image_url" /></label>
+            <label>Image ids<input id="p_image_ids" /></label>
+          </div>
+          <div class="row">
+            <button id="btnUpsertProduct">Lưu sản phẩm</button>
+            <button id="btnDeleteProduct" class="danger">Xóa</button>
+          </div>
+          <p class="hint">created_at / updated_at sẽ tự set trong Apps Script.</p>
         </div>
-        <div class="auth__status" id="authStatus">Chưa đăng nhập</div>
+
+        <div class="card">
+          <h3>Danh sách</h3>
+          <div class="tableWrap">
+            <table id="productsTable">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </header>
+    </section>
 
-    <!-- Main -->
-    <main class="main">
-      <!-- Controls -->
-      <section class="card">
-        <div class="card__title">Tìm kiếm & Bộ lọc</div>
+    <!-- STOCK -->
+    <section id="tab-stock" class="panel">
+      <div class="panel-head">
+        <h2>Tồn kho</h2>
+        <button id="btnLoadStock" class="right">Tải tồn</button>
+      </div>
 
-        <div class="controls">
-          <div class="controls__left">
-            <div class="field">
-              <label class="label">Tìm theo</label>
-              <input id="q" class="input" placeholder="Tên / OEM / OEM thay thế / QR..." />
-            </div>
-
-            <div class="field">
-              <label class="label">Loại</label>
-              <select id="category" class="select">
-                <option value="">Tất cả loại</option>
-              </select>
-            </div>
-
-            <div class="field">
-              <label class="label">Thương hiệu</label>
-              <select id="brand" class="select">
-                <option value="">Tất cả thương hiệu</option>
-              </select>
-            </div>
-
-            <label class="check">
-              <input id="lowStock" type="checkbox" />
-              <span>Sắp hết</span>
-            </label>
-          </div>
-
-          <div class="controls__right">
-            <button id="btnScan" class="btn">
-              <span class="btn__icon">📷</span> Quét QR/OEM
-            </button>
-            <button id="btnCart" class="btn">
-              <span class="btn__icon">🧺</span> Giỏ (<span id="cartCount">0</span>)
-            </button>
-            <button id="btnSearch" class="btn btn--primary">Lọc / Tìm</button>
-          </div>
-        </div>
-
-        <div class="actions">
-          <button id="btnAdd" class="btn btn--success">+ Thêm</button>
-          <button id="btnExport" class="btn">Xuất CSV</button>
-          <label class="btn btn--ghost">
-            Nhập CSV
-            <input id="csvFile" type="file" accept=".csv" hidden />
+      <div class="card">
+        <h3>Điều chỉnh tồn (admin)</h3>
+        <div class="form grid3">
+          <label>Loc
+            <select id="s_loc">
+              <option>WAREHOUSE</option>
+              <option>STORE</option>
+            </select>
           </label>
-          <div class="muted" id="hint">Tip: gõ OEM rồi Enter để tìm nhanh</div>
+          <label>Product ID<input id="s_product_id" /></label>
+          <label>Delta (+/-)<input id="s_delta" type="number" /></label>
+          <label>Note<input id="s_note" /></label>
+          <label>Actor<input id="s_actor" placeholder="vd: admin" /></label>
         </div>
-      </section>
+        <button id="btnAdjustStock">Ghi điều chỉnh</button>
+        <p class="hint">Delta âm là trừ kho, dương là cộng kho.</p>
+      </div>
 
-      <!-- Table -->
-      <section class="card">
-        <div class="card__title">Danh sách sản phẩm</div>
-
+      <div class="card">
+        <h3>Snapshot</h3>
         <div class="tableWrap">
-          <table class="table" id="tbl">
+          <table id="stockTable">
             <thead>
-              <tr>
-                <th style="width: 90px;">ID</th>
-                <th style="width: 140px;">OEM</th>
-                <th>Tên</th>
-                <th style="width: 160px;">Thương hiệu</th>
-                <th style="width: 140px;">Loại</th>
-                <th style="width: 120px; text-align:right;">Giá</th>
-                <th style="width: 120px; text-align:right;">Tồn</th>
-                <th style="width: 140px;">Hành động</th>
-              </tr>
+              <tr><th>product_id</th><th>warehouse</th><th>store</th></tr>
             </thead>
-            <tbody id="tbody">
-              <tr>
-                <td colspan="8" class="muted center">Chưa có dữ liệu. Bấm “Lọc / Tìm”.</td>
-              </tr>
-            </tbody>
+            <tbody></tbody>
           </table>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <!-- Footer -->
-      <footer class="footer">
-        <span>© Bản quyền thuộc về cửa hàng • Quản lý kho phụ tùng</span>
-      </footer>
-    </main>
+    <!-- TRANSFER -->
+    <section id="tab-transfer" class="panel">
+      <div class="panel-head">
+        <h2>Chuyển kho (admin)</h2>
+      </div>
+      <div class="card">
+        <div class="form grid3">
+          <label>From
+            <select id="t_from">
+              <option>WAREHOUSE</option>
+              <option>STORE</option>
+            </select>
+          </label>
+          <label>To
+            <select id="t_to">
+              <option>STORE</option>
+              <option>WAREHOUSE</option>
+            </select>
+          </label>
+          <label>Product ID<input id="t_product_id" /></label>
+          <label>Qty<input id="t_qty" type="number" /></label>
+          <label>Price (optional)<input id="t_price" type="number" /></label>
+          <label>Note<input id="t_note" /></label>
+          <label>Actor<input id="t_actor" /></label>
+        </div>
+        <button id="btnTransfer">Chuyển</button>
+      </div>
+    </section>
 
-    <!-- Modal -->
-    <div class="modal" id="modal" aria-hidden="true">
-      <div class="modal__overlay" data-close="1"></div>
-      <div class="modal__panel">
-        <div class="modal__header">
-          <div class="modal__title" id="modalTitle">Thêm sản phẩm</div>
-          <button class="iconBtn" data-close="1" title="Đóng">✕</button>
+    <!-- BILL -->
+    <section id="tab-bill" class="panel">
+      <div class="panel-head">
+        <h2>Tạo hóa đơn (admin)</h2>
+      </div>
+
+      <div class="card">
+        <div class="form grid3">
+          <label>Loc
+            <select id="b_loc">
+              <option>STORE</option>
+              <option>WAREHOUSE</option>
+            </select>
+          </label>
+          <label>Bill ID (optional)<input id="b_bill_id" placeholder="trống = tự tạo" /></label>
+          <label>Note<input id="b_note" /></label>
+          <label>Actor<input id="b_actor" /></label>
         </div>
 
-        <div class="modal__body">
-          <div class="grid2">
-            <div class="field">
-              <label class="label">ID</label>
-              <input id="p_id" class="input" placeholder="Tự tạo hoặc nhập" />
-            </div>
-            <div class="field">
-              <label class="label">Giá</label>
-              <input id="p_price" class="input" placeholder="Ví dụ: 120000" inputmode="numeric" />
-            </div>
-
-            <div class="field">
-              <label class="label">OEM</label>
-              <input id="p_oem" class="input" placeholder="OEM" />
-            </div>
-
-            <div class="field">
-              <label class="label">OEM thay thế</label>
-              <input id="p_oem_alt" class="input" placeholder="vd: 123;456" />
-            </div>
-
-            <div class="field gridSpan2">
-              <label class="label">Tên</label>
-              <input id="p_name" class="input" placeholder="Tên sản phẩm" />
-            </div>
-
-            <div class="field">
-              <label class="label">Thương hiệu</label>
-              <input id="p_brand" class="input" placeholder="VD: Toyota" />
-            </div>
-
-            <div class="field">
-              <label class="label">Loại</label>
-              <input id="p_category" class="input" placeholder="VD: Lọc dầu" />
-            </div>
-          </div>
-
-          <div class="uploader">
-            <div class="uploader__block">
-              <div class="uploader__title">Ảnh đại diện</div>
-              <input id="p_avatar" type="file" accept="image/*" />
-              <div class="preview" id="avatarPreview"></div>
-            </div>
-
-            <div class="uploader__block">
-              <div class="uploader__title">Album ảnh</div>
-              <input id="p_album" type="file" accept="image/*" multiple />
-              <div class="preview preview--grid" id="albumPreview"></div>
-            </div>
-          </div>
-
-          <div class="divider"></div>
-
-          <div class="field">
-            <label class="label">Chi tiết</label>
-            <textarea id="p_desc" class="textarea" rows="4" placeholder="Thông tin thêm..."></textarea>
-          </div>
+        <div class="row">
+          <input id="bi_product_id" placeholder="product_id" />
+          <input id="bi_qty" type="number" placeholder="qty" />
+          <input id="bi_price" type="number" placeholder="price" />
+          <button id="btnAddItem">+ Thêm dòng</button>
         </div>
 
-        <div class="modal__footer">
-          <button class="btn" data-close="1">Hủy</button>
-          <button id="btnSave" class="btn btn--primary">Lưu</button>
+        <div class="tableWrap">
+          <table id="billItemsTable">
+            <thead><tr><th>product_id</th><th>qty</th><th>price</th><th>line_total</th><th></th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="row right">
+          <div id="billTotal" class="pill">Tổng: 0</div>
+          <button id="btnCreateBill">Tạo hóa đơn</button>
         </div>
       </div>
-    </div>
-  </div>
+    </section>
+
+    <!-- TXNS -->
+    <section id="tab-txns" class="panel">
+      <div class="panel-head">
+        <h2>TXNS</h2>
+        <button id="btnLoadTxns" class="right">Tải</button>
+      </div>
+      <div class="card">
+        <div class="tableWrap">
+          <table id="txnsTable"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+
+    <!-- BILLS -->
+    <section id="tab-bills" class="panel">
+      <div class="panel-head">
+        <h2>BILLS</h2>
+        <button id="btnLoadBills" class="right">Tải</button>
+      </div>
+      <div class="card">
+        <div class="tableWrap">
+          <table id="billsTable"><thead></thead><tbody></tbody></table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">Sheets + Apps Script + GitHub UI</footer>
 
   <script src="./app.js"></script>
 </body>
